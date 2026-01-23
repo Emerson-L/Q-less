@@ -17,17 +17,26 @@ def roll(dice_csv:str):
     Picks 12 random letters from the Q-less dice
     """
     dice = pd.read_csv(dice_csv, header=None)
-    return [random.choice(row) for _, row in dice.iterrows()]
+    return [random.choice(row).lower() for _, row in dice.iterrows()]
 
 if __name__ == '__main__':
     letters = roll('./dice.csv')
     words = load_words()
-    print(letters)
-    print(len(words))
+    print(f'Rolled letters: {letters}')
+    print(f'Total words: {len(words)}')
 
+    letters_count = Counter(letters)
     valid_words = []
     for word in words:
         word_count = Counter(word)
-        print(word_count)
+        if word_count <= letters_count:
+            valid_words.append(word)
+
+    print(f'Found {len(valid_words)} valid starting words')
+    lengths = [len(w) for w in valid_words]
+    length_counts = Counter(lengths)
+    for length in sorted(length_counts):
+        print(f'Length {length:<10}  Count {length_counts[length]:<10}')
+
 
     
