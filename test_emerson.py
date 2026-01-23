@@ -9,10 +9,10 @@ def load_words():
     Loads nltk words that are valid for Q-less
     """
     try:
-        from nltk.corpus import words
-    except:
-        nltk.download('words')
-        from nltk.corpus import words
+        nltk.data.find('corpora/words')
+    except LookupError:
+        nltk.download('words', quiet=True)
+    from nltk.corpus import words
     return [w for w in words.words() if w.islower() and len(w) >= 3 and len(w) <= 12 and w.isalpha()]
 
 def load_dice() -> list[list[str]]:
