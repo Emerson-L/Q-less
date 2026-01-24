@@ -3,6 +3,7 @@ import random
 import nltk
 from collections import Counter
 import csv
+from assets import twl
 
 def is_qless_word(word: str) -> bool:
     """
@@ -22,13 +23,19 @@ def is_qless_word(word: str) -> bool:
     -----
     A word is valid in Q-less if it is at least 3 letters. However, given
     that there are only 12 dice and the prior constraint, 11 and 13+ letter
-    words aren't possible.
+    words aren't possible. Also, no dice have `q` so words containing it are
+    invalid.
     """
-    if word.islower() and word.isalpha() and len(word) <=12 and len(word) not in [1,2,11]:
-        return True
-    return False
+    conditions = [
+        word.islower(),
+        word.isalpha(),
+        len(word) <= 12,
+        len(word) not in [1, 2, 11],
+        'q' not in word
+    ]
+    return all(conditions)
 
-def load_words():
+def load_words() -> list[str]:
     """
     Loads nltk words that are valid for Q-less
 
@@ -37,12 +44,7 @@ def load_words():
     list of str
         All words in the nltk dataset
     """
-    try:
-        nltk.data.find('corpora/words')
-    except LookupError:
-        nltk.download('words', quiet=True)
-    from nltk.corpus import words
-    return [w for w in words.words() if is_qless_word(w)]
+    return [w for w in twl.iterator() if is_qless_word(w)]
 
 def load_dice(dice_csv_path:str) -> list[list[str]]:
     """

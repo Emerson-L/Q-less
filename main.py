@@ -3,13 +3,26 @@ from pathlib import Path
 from collections import Counter
 import numpy as np
 import random
+from treelib.tree import Tree
 
 import utils
 import trie_lib
 import visualize
+import gaddag_lib
 
 DICE_CSV_PATH = './assets/dice.csv'
 TRIE_PKL_PATH = './assets/trie.pkl'
+GADDAG_PKL_PATH = './assets/gaddag.pkl'
+
+def test_gaddag():
+    words = utils.load_words()
+    gaddag = gaddag_lib.get_gaddag(words)
+    tree = Tree()
+    tree.create_node(tag='Root', identifier='root')
+
+    gaddag_lib.add_nodes(tree, 'root', gaddag)
+    tree.show()
+
 
 def test_trie():
     words = utils.load_words()
@@ -51,9 +64,30 @@ def starter_word():
     for idx, char in enumerate(starter):
         board[11, 11 - (len(starter)//2) + idx] = char.upper()
 
+    for letter in starter:
+        letters.remove(letter)
+    rack = Counter(letters)
+    if Path(GADDAG_PKL_PATH).exists():
+        with open(GADDAG_PKL_PATH, 'rb') as f:
+            gaddag = pickle.load(f)
+    else:
+        gaddag = gaddag_lib.get_gaddag(words)
+        with open(TRIE_PKL_PATH, 'wb') as f:
+            pickle.dump(gaddag, f)
+            
+    results = gaddag_lib.find_second_word(starter, rack, gaddag)
+    if results:
+        i, (j, word) = results[0], results[1][0]
+    print(f"Second word: {word}")
+    for idx, char in enumerate(word):
+        board[11 - j + idx, 11 - (len(starter)//2) + i] = char.upper()
+    
+    for i, letter in enumerate(word):
+        if i == j: continue
+        letters.remove(letter)
+
     adjacents = utils.find_anchors(board)
     visualize.plot_board(board, letters, adjacents)
 
 if __name__ == '__main__':
-    #test_trie()
     starter_word()
