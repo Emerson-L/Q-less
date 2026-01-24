@@ -20,7 +20,7 @@ def generate_trie(words:list, visualize:bool=False) -> dict:
 
         if visualize:
             if i == 5: 
-                with open('trie.json', 'w') as f:
+                with open('./assets/trie.json', 'w') as f:
                     f.write(json.dumps(trie_root, indent=4))
                 break
 
