@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from typing import Optional
 
-def plot_board(board:np.ndarray, letters:list[str], adjacents:np.ndarray=None, output_file:str=None):
+def plot_board(board:np.ndarray, letters:list[str], adjacents:Optional[np.ndarray]=None, output_file:Optional[str]=None):
     """
     Plots an image of the given board and either saves it to output_file if given or shows the plot.
 
@@ -51,15 +52,16 @@ def plot_board(board:np.ndarray, letters:list[str], adjacents:np.ndarray=None, o
             )
 
     # Color the adjacents
-    mask = np.zeros((24, 24))
-    mask[adjacents[:, 0], adjacents[:, 1]] = 1
-    ax.imshow(
-        mask,
-        cmap='Reds',
-        alpha=0.5,
-        vmin=0,
-        vmax=1
-    )
+    if adjacents is not None:
+        mask = np.zeros((24, 24))
+        mask[adjacents[:, 0], adjacents[:, 1]] = 1
+        ax.imshow(
+            mask,
+            cmap='Reds',
+            alpha=0.5,
+            vmin=0,
+            vmax=1
+        )
 
     if output_file is not None:
         plt.savefig(output_file, dpi=300)

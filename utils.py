@@ -97,7 +97,7 @@ def get_valid_words(roll: list[str], words: list[str]) -> list[str]:
     return valid_words
 
 
-def find_anchors(board:np.ndarray) -> list[tuple]:
+def find_anchors(board:np.ndarray) -> np.ndarray:
     """
     Find the anchors in a board and return an array of the coordinates of sqaures adjacent to those that are filled
     """
