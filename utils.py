@@ -91,20 +91,5 @@ def get_valid_words(roll: list[str], words: list[str]) -> list[str]:
             valid_words.append(word)
     return valid_words
 
-if __name__ == '__main__':
-    dice = load_dice()
-    letters = roll(dice)
-    words = load_words()
-    print(f'Rolled letters: {letters}')
-    print(f'Total words: {len(words)}')
-
-    valid_words = get_valid_words(letters, words)
-
-    print(f'Found {len(valid_words)} valid starting words')
-    lengths = [len(w) for w in valid_words]
-    length_counts = Counter(lengths)
-    for length in sorted(length_counts):
-        print(f'Length {length:<10}  Count {length_counts[length]:<10}')
-
 
     
