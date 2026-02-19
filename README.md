@@ -18,5 +18,12 @@ Q-less solver by Indy and Emerson
 - Find a set of dice that maximizes probability that a roll is solvable
 
 
+**Taking Pictures of Dice**
+-TODO: Take some example images
+For best model performance in selecting the correct dice in the pictures you take:
+- Roll the dice on some printer paper or otherwise solid-colored surface
+- Bring the dice together so they fit in a roughly printer-paper sized area, but leave them about evenly spaced within that area
+- Take a picture that includes all dice in as clear detail as possible, and don't use the flash
+
 **Sources**
 - [Appel and Jacobson Scrabble Paper](https://www.cs.cmu.edu/afs/cs/academic/class/15451-s06/www/lectures/scrabble.pdf)

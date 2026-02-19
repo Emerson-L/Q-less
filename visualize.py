@@ -69,3 +69,32 @@ def plot_board(board:np.ndarray, letters:list[str], adjacents:Optional[np.ndarra
     else:
         plt.show()
 
+def plot_image_with_contours(image:np.ndarray, contours:list[np.ndarray], output_file:Optional[str]=None) -> None:
+    """
+    Plot the given image with all given contours highlighted
+
+    Parameters
+    ----------
+    image : np.ndarray
+        Image loaded with cv.imread(image_path)
+    contours : list of np.ndarray
+        list of contours from sklearn's measure.find_contours()
+    output_file : str
+        File path ending in .png to optionally save the board image
+    """
+    fig, ax = plt.subplots()
+    ax.imshow(image, cmap=plt.cm.gray)
+
+    for contour in contours:
+        ax.plot(contour[:, 1], contour[:, 0], linewidth=2)
+
+    ax.axis('image')
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    if output_file is not None:
+        plt.savefig(output_file, dpi=300)
+        plt.close()
+    else:
+        plt.show()
+                                                             
