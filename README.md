@@ -19,7 +19,7 @@ Q-less solver by Indy and Emerson
 
 
 **Taking Pictures of Dice**
--TODO: Take some example images
+-TODO: Take some examples of good images
 For best model performance in selecting the correct dice in the pictures you take:
 - Roll the dice on some printer paper or otherwise solid-colored surface
 - Bring the dice together so they fit in a roughly printer-paper sized area, but leave them about evenly spaced within that area

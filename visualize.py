@@ -76,7 +76,7 @@ def plot_image_with_contours(image:np.ndarray, contours:list[np.ndarray], output
     Parameters
     ----------
     image : np.ndarray
-        Image loaded with cv.imread(image_path)
+        Image array
     contours : list of np.ndarray
         list of contours from sklearn's measure.find_contours()
     output_file : str
@@ -97,4 +97,24 @@ def plot_image_with_contours(image:np.ndarray, contours:list[np.ndarray], output
         plt.close()
     else:
         plt.show()
-                                                             
+
+def plot_image(image:np.ndarray, output_file:Optional[str]=None) -> None:
+    """
+    Plot the given image in grayscale
+
+    Parameters
+    ----------
+    image : np.ndarray
+        Image loaded with cv.imread(image_path)
+    output_file : str
+        File path ending in .png to optionally save the board image
+    """
+    fig, ax = plt.subplots()
+    ax.imshow(image, cmap=plt.cm.gray)
+    plt.show()
+    
+    if output_file is not None:
+        plt.savefig(output_file, dpi=300)
+        plt.close()
+    else:
+        plt.show()
