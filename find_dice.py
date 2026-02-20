@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import visualize
 
 DICE_IMAGES_DIR = './assets/dice_images/paper_background/'
+LETTER_IMAGES_DIR = './assets/letter_images/'
 NUM_DICE = 12
 
 CONTOUR_VALUE = 50  # Value between 0-255 used to find contours in the grayscaled image
@@ -110,13 +111,23 @@ def contours_to_letter_images(image:np.ndarray, contours:list[np.ndarray]) -> li
 
     return dice_images
 
-if __name__ == '__main__':
-    for image_path in Path(DICE_IMAGES_DIR).glob('*.JPG'):
+def generate_letter_images(dice_images_dir:str, letter_images_dir:str) -> None:
+    Path(letter_images_dir).mkdir(exist_ok=True)
+    for image_path in Path(dice_images_dir).glob('*.JPG'):
         image = cv.imread(image_path)
         gray_image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
   
         contours = get_contours(gray_image)
         letter_images = contours_to_letter_images(gray_image, contours)
+
+        this_image_dir = f'{letter_images_dir}/{image_path.stem}/'
+        Path(this_image_dir).mkdir(exist_ok=True)
+        for i, image in enumerate(letter_images):
+            cv2_image = (image * 255).astype(np.uint8)
+            cv.imwrite(f'{this_image_dir}/letter_{i}.png', cv2_image)
+
+if __name__ == '__main__':
+    generate_letter_images(DICE_IMAGES_DIR, LETTER_IMAGES_DIR)
 
 
 
