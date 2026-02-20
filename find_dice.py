@@ -104,7 +104,7 @@ def contours_to_letter_images(image:np.ndarray, contours:list[np.ndarray]) -> li
 
         resized = transform.resize(cropped, (28, 28), anti_aliasing=True)
 
-        visualize.plot_image(resized)
+        #visualize.plot_image(resized)
 
         dice_images.append(resized)
 
