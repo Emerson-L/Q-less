@@ -14,6 +14,9 @@ import visualize
 BATCH_SIZE = 32
 
 class Net(torch.nn.Module):
+    """
+    CNN architecture derived from pytorch CNN tutorial
+    """
     def __init__(self):
         super().__init__()
         self.conv1 = torch.nn.Conv2d(1, 2, 5)
@@ -44,9 +47,16 @@ class Net(torch.nn.Module):
         # print(x.shape)
         return x
     
-def train(trainloader, model_path:str) -> None:
+def train(trainloader:DataLoader, model_path:str) -> None:
     """
-    Trains model and saves
+    Trains and saves model. Derived from pytorch CNN tutorial
+
+    Parameters
+    ----------
+    trainloader : torch DataLoader
+        DataLoader with training dataset
+    model_path : str
+        path to save trained model to
     """
     net = Net()
     criterion = torch.nn.CrossEntropyLoss()
@@ -78,6 +88,16 @@ def train(trainloader, model_path:str) -> None:
 
 
 def load_emnist_data():
+    """
+    Loads emnist letters dataset into train and test DataLoaders
+
+    Returns
+    -------
+    train_loader : torch DataLoader
+        DataLoader with train set
+    test_loader : torch DataLoader
+        DataLoader with test set
+    """
     train_images, train_labels = extract_training_samples('letters')
     test_images, test_labels = extract_test_samples('letters')
 
@@ -108,14 +128,24 @@ def load_emnist_data():
 
     return trainloader, testloader
 
-if __name__ == '__main__':
-    MODEL_PATH = './letters_model.pth'
+def load_and_test(testloader:DataLoader, model_path:str) -> float:
+    """
+    Loads and tests a given model on a given test set. Derived from pytorch CNN tutorial
 
-    trainloader, testloader = load_emnist_data()
-    #train(trainloader, MODEL_PATH)
-
+    Parameters
+    ---------
+    testloader : torch DataLoader
+        DataLoader with test set
+    model_path : str
+        path to existing saved model
+    
+    Returns
+    -------
+    accuracy : float
+        accuracy on test set
+    """
     net = Net()
-    net.load_state_dict(torch.load(MODEL_PATH, weights_only=True))
+    net.load_state_dict(torch.load(model_path, weights_only=True))
 
     dataiter = iter(testloader)
     images, labels = next(dataiter)
@@ -139,7 +169,20 @@ if __name__ == '__main__':
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
-    print(f'Accuracy of the network on test images: {100 * correct / total:.2f}%')
+    accuracy = 100 * correct / total
+    return accuracy
+
+if __name__ == '__main__':
+    MODEL_PATH = './letters_model.pth'
+
+    trainloader, testloader = load_emnist_data()
+    print(type(testloader))
+
+    #train(trainloader, MODEL_PATH)
+
+    accuracy = load_and_test(testloader, MODEL_PATH)
+    print(f'Accuracy of the network on test images: {accuracy:.2f}%')
+
 
     # Try predicting on our images next
 
