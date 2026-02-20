@@ -114,17 +114,17 @@ def contours_to_letter_images(image:np.ndarray, contours:list[np.ndarray]) -> li
 def generate_letter_images(dice_images_dir:str, letter_images_dir:str) -> None:
     Path(letter_images_dir).mkdir(exist_ok=True)
     for image_path in Path(dice_images_dir).glob('*.JPG'):
-        image = cv.imread(image_path)
-        gray_image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+        image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
   
-        contours = get_contours(gray_image)
-        letter_images = contours_to_letter_images(gray_image, contours)
+        contours = get_contours(image)
+        letter_images = contours_to_letter_images(image, contours)
 
         this_image_dir = f'{letter_images_dir}/{image_path.stem}/'
         Path(this_image_dir).mkdir(exist_ok=True)
-        for i, image in enumerate(letter_images):
-            cv2_image = (image * 255).astype(np.uint8)
-            cv.imwrite(f'{this_image_dir}/letter_{i}.png', cv2_image)
+        for i, letter_image in enumerate(letter_images):
+            cv2_image = (letter_image * 255).astype(np.uint8)
+            cv2_inverted = cv.bitwise_not(cv2_image)
+            cv.imwrite(f'{this_image_dir}/letter_{i}.png', cv2_inverted)
 
 if __name__ == '__main__':
     generate_letter_images(DICE_IMAGES_DIR, LETTER_IMAGES_DIR)

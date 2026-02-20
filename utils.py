@@ -116,4 +116,36 @@ def find_anchors(board:np.ndarray) -> np.ndarray:
 
     return np.argwhere(adjacent == True)
 
-    
+def letters_to_numbers(letters:list[str]|str) -> list[int]:
+    """
+    Converts a list of characters or string of characters into their index in the alphabet.
+    A/a = 0, B/b = 1, etc
+
+    Parameters
+    ----------
+    letters : list of str or str
+        List of single-character strings or single string of characters to convert.
+
+    Returns
+    -------
+    nums : list[int]
+        A list of integers corresponding to the given letters
+    """
+    return [ord(character.lower()) - 97 for character in letters]
+
+def numbers_to_letters(nums: list[int]) -> list[str]:
+    """
+    Converts a list of 0-based indices into uppercase characters.
+    0 = A, 1 = B, etc
+
+        Parameters
+    ----------
+    nums : list of int
+        List of numbers to convert
+
+    Returns
+    -------
+    letters : list of str
+        A list of characters corresponding to the given numbers 
+    """
+    return [chr(num + 97).upper() for num in nums]

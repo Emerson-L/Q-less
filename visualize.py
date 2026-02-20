@@ -98,21 +98,48 @@ def plot_image_with_contours(image:np.ndarray, contours:list[np.ndarray], output
     else:
         plt.show()
 
-def plot_image(image:np.ndarray, output_file:Optional[str]=None) -> None:
+def plot_image(image:np.ndarray, letter:str=None, output_file:Optional[str]=None) -> None:
     """
     Plot the given image in grayscale
 
     Parameters
     ----------
     image : np.ndarray
-        Image loaded with cv.imread(image_path)
+        Image array
+    letter : character
+        letter to plot in the top left, i.e. the predicted letter
     output_file : str
         File path ending in .png to optionally save the board image
     """
     fig, ax = plt.subplots()
     ax.imshow(image, cmap=plt.cm.gray)
-    plt.show()
+
+    if letter is not None:
+        ax.text(0.5, 2, letter, fontsize=20, color='white')
     
+    if output_file is not None:
+        plt.savefig(output_file, dpi=300)
+        plt.close()
+    else:
+        plt.show()
+
+def plot_probs(letters:list[str], probs:np.ndarray, output_file:Optional[str]=None) -> None:
+    """
+    Plots probabilities of each letter given letters and 
+
+    Parameters
+    ----------
+    letters : list of str
+        List of letters in alphabet
+    probs : 1d np.array of float
+        Array of probabilites corresponding to each letter
+    output_file : str
+        File path ending in .png to optionally save the board image
+    """
+    plt.bar(letters, probs)
+    plt.xlabel('Letter')
+    plt.ylabel('Probability')
+   
     if output_file is not None:
         plt.savefig(output_file, dpi=300)
         plt.close()
