@@ -16,7 +16,8 @@ import utils
 
 NUM_DICE = 12 # Should centralize config stuff like this at some point
 BATCH_SIZE = 32
-MODEL_PATH = './letters_model.pth'
+NUM_EPOCHS = 10
+MODEL_PATH = f'./letters_model_{NUM_EPOCHS}.pth'
 
 class Net(torch.nn.Module):
     """
@@ -52,7 +53,7 @@ class Net(torch.nn.Module):
         # print(x.shape)
         return x
     
-def train(trainloader:DataLoader, model_path:str) -> None:
+def train(trainloader:DataLoader, model_path:str) -> np.ndarray:
     """
     Trains and saves model. Derived from pytorch CNN tutorial
 
@@ -62,12 +63,18 @@ def train(trainloader:DataLoader, model_path:str) -> None:
         DataLoader with training dataset
     model_path : str
         path to save trained model to
+
+    Returns
+    -------
+    losses : np.ndarray
+        1d array of training losses
     """
     net = Net()
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-    for epoch in range(2):
+    losses = []
+    for epoch in range(NUM_EPOCHS):
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
             inputs, labels = data
@@ -85,11 +92,12 @@ def train(trainloader:DataLoader, model_path:str) -> None:
             running_loss += loss.item()
             if i % 200 == 199:    # print every 200 mini-batches
                 print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 200:.3f}')
+                losses.append(running_loss)
                 running_loss = 0.0
 
     torch.save(net.state_dict(), model_path)
-
     print('Finished training, saved model')
+    return np.array(losses)
 
 
 def load_and_test(testloader:DataLoader, model_path:str, plot_predictions:bool=False) -> float:
@@ -215,11 +223,12 @@ def load_qless_test_data(test_images_dir:str) -> DataLoader:
     return loader
 
 if __name__ == '__main__':
-    # trainloader, testloader = load_emnist_data()
-    # train(trainloader, MODEL_PATH)
+    trainloader, testloader = load_emnist_data()
+    losses = train(trainloader, MODEL_PATH)
+    visualize.plot_loss_curve(losses)
 
-    #accuracy = load_and_test(testloader, MODEL_PATH)
-    #print(f'Accuracy on EMNIST test set: {accuracy:.2f}%')
+    accuracy = load_and_test(testloader, MODEL_PATH)
+    print(f'Accuracy on EMNIST test set: {accuracy:.2f}%')
 
     # Test out our model on real Qless data
     test_images_dirs = ['./assets/letter_images/IMG_3296/',

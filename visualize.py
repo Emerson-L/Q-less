@@ -145,3 +145,24 @@ def plot_probs(letters:list[str], probs:np.ndarray, output_file:Optional[str]=No
         plt.close()
     else:
         plt.show()
+
+def plot_loss_curve(losses:np.ndarray, output_file:Optional[str]=None) -> None:
+    """
+    Plots loss curve
+
+    Parameters
+    ----------
+    losses : np.ndarray
+        Array of loss values from training
+    output_file : str
+        File path ending in .png to optionally save the board image
+    """
+    plt.plot(losses)
+    plt.xlabel('Epoch/Batch')
+    plt.ylabel('Loss')
+   
+    if output_file is not None:
+        plt.savefig(output_file, dpi=300)
+        plt.close()
+    else:
+        plt.show()
