@@ -90,7 +90,7 @@ def train(trainloader:DataLoader, model_path:str) -> np.ndarray:
     return np.array(losses)
 
 
-def load_and_test(testloader:DataLoader, model_path:str, plot_predictions:bool=False) -> float:
+def load_and_test(testloader:DataLoader, model_path:str, plot_wrong_predictions:bool=False) -> float:
     """
     Loads and tests a given model on a given test set. Derived from pytorch CNN tutorial
 
@@ -126,24 +126,25 @@ def load_and_test(testloader:DataLoader, model_path:str, plot_predictions:bool=F
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-            if plot_predictions:
-                for i, (image, pred_idx) in enumerate(zip(images, predicted)):
-                    letter = utils.numbers_to_letters([pred_idx])[0]
-                    visualize.plot_image(image[0], letter=letter)
-                    visualize.plot_probs(utils.numbers_to_letters(range(26)), softmaxed_outputs[i])
+            if plot_wrong_predictions:
+                for i, (image, pred, label) in enumerate(zip(images, predicted, labels)):
+                    if pred != label:
+                        letter = utils.numbers_to_letters([pred])[0]
+                        visualize.plot_image(image[0], letter=letter)
+                        visualize.plot_probs(utils.numbers_to_letters(range(26)), softmaxed_outputs[i])
 
     accuracy = 100 * correct / total
     return accuracy
 
 if __name__ == '__main__':
 
-    model_to_test = './model_chars74k_10.pth'
+    model_to_test = './model_chars74k_10_aug3.pth'
 
     # Train and test EMNIST
     #trainloader, testloader = wrangle.load_emnist_data(config.EMNIST_DATASET_NAME)
 
     # Train and test chars74k
-    trainloader, testloader = wrangle.load_chars74k_data()
+    trainloader, testloader = wrangle.load_chars74k_data(augment_rotation=True)
 
     #losses = train(trainloader, config.MODEL_PATH)
     #visualize.plot_loss_curve(losses)
@@ -158,7 +159,7 @@ if __name__ == '__main__':
                          './assets/letter_images/IMG_3299/',]
     for dir in test_images_dirs:
         Qless_testloader = wrangle.load_qless_test_data(dir)
-        Qless_accuracy = load_and_test(Qless_testloader, model_to_test, plot_predictions=False)
+        Qless_accuracy = load_and_test(Qless_testloader, model_to_test, plot_wrong_predictions=True)
         print(f'Accuracy on {Path(dir).stem}: {Qless_accuracy:.2f}%')
 
 
