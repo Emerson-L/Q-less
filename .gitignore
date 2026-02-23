@@ -3,4 +3,8 @@ __pycache__
 .DS_Store
 /assets/.DS_Store
 
+# Ignore all models
 *.pth
+
+# Ignore the dataset
+/assets/chars74k_English/
