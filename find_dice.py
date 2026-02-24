@@ -7,14 +7,7 @@ from scipy.spatial import distance_matrix
 import matplotlib.pyplot as plt
 
 import visualize
-
-DICE_IMAGES_DIR = './assets/dice_images/paper_background/'
-LETTER_IMAGES_DIR = './assets/letter_images/'
-NUM_DICE = 12
-
-CONTOUR_VALUE = 50  # Value between 0-255 used to find contours in the grayscaled image
-#TODO: Contour value should be decided somehow based on the image, this is brittle but works for the test images 
-PADDING_SCALAR = 1.3
+import config
 
 def get_contours(image:np.ndarray, n_contours:int = 20) -> list[np.ndarray]:
     """
@@ -34,6 +27,10 @@ def get_contours(image:np.ndarray, n_contours:int = 20) -> list[np.ndarray]:
     best_num_dice_contours : list[np.ndarray]
         The chosen contours based on the number of dice
     """
+
+    #TODO: Contour value should be decided somehow based on the image, this is brittle but works for the test images 
+    CONTOUR_VALUE = 50  # Value between 0-255 used to find contours in the grayscaled image
+
     all_contours = measure.find_contours(image, CONTOUR_VALUE, fully_connected='high', positive_orientation='high')
 
     def get_contour_bounding_box_area(c):
@@ -52,7 +49,7 @@ def get_contours(image:np.ndarray, n_contours:int = 20) -> list[np.ndarray]:
     np.fill_diagonal(dist_matrix, np.inf)
 
     idxs_to_delete = []
-    for i in range(n_contours - NUM_DICE):
+    for i in range(n_contours - config.NUM_DICE):
         i = np.argmin(dist_matrix)
         i, j = np.unravel_index(i, dist_matrix.shape)
 
@@ -81,6 +78,7 @@ def contours_to_letter_images(image:np.ndarray, contours:list[np.ndarray]) -> li
     contours : list of np.ndarray
         list of contours to convert to images
     """
+    PADDING_SCALAR = 1.3
 
     dice_images = []
     for contour in contours:
@@ -127,7 +125,7 @@ def generate_letter_images(dice_images_dir:str, letter_images_dir:str) -> None:
             cv.imwrite(f'{this_image_dir}/letter_{i}.png', cv2_inverted)
 
 if __name__ == '__main__':
-    generate_letter_images(DICE_IMAGES_DIR, LETTER_IMAGES_DIR)
+    generate_letter_images(config.DICE_IMAGES_DIR, config.LETTER_IMAGES_DIR)
 
 
 

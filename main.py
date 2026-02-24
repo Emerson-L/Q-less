@@ -6,13 +6,10 @@ import random
 from treelib.tree import Tree
 
 import utils
+import config
 import trie_lib
 import visualize
 import gaddag_lib
-
-DICE_CSV_PATH = './assets/dice.csv'
-TRIE_PKL_PATH = './assets/trie.pkl'
-GADDAG_PKL_PATH = './assets/gaddag.pkl'
 
 def test_gaddag():
     words = utils.load_words()
@@ -26,12 +23,12 @@ def test_gaddag():
 
 def test_trie():
     words = utils.load_words()
-    if Path(TRIE_PKL_PATH).exists():
-        with open(TRIE_PKL_PATH, 'rb') as f:
+    if Path(config.TRIE_PKL_PATH).exists():
+        with open(config.TRIE_PKL_PATH, 'rb') as f:
             trie = pickle.load(f)
     else:
         trie = trie_lib.generate_trie(words)
-        with open(TRIE_PKL_PATH, 'wb') as f:
+        with open(config.TRIE_PKL_PATH, 'wb') as f:
             pickle.dump(trie, f)
 
 
@@ -41,7 +38,7 @@ def test_trie():
 
 
 def starter_word():
-    dice = utils.load_dice(DICE_CSV_PATH)
+    dice = utils.load_dice(config.DICE_CSV_PATH)
     letters = utils.roll(dice)
     words = utils.load_words()
     print(f'Rolled letters: {letters}')
@@ -67,12 +64,12 @@ def starter_word():
     for letter in starter:
         letters.remove(letter)
     rack = Counter(letters)
-    if Path(GADDAG_PKL_PATH).exists():
-        with open(GADDAG_PKL_PATH, 'rb') as f:
+    if Path(config.GADDAG_PKL_PATH).exists():
+        with open(config.GADDAG_PKL_PATH, 'rb') as f:
             gaddag = pickle.load(f)
     else:
         gaddag = gaddag_lib.get_gaddag(words)
-        with open(TRIE_PKL_PATH, 'wb') as f:
+        with open(config.TRIE_PKL_PATH, 'wb') as f:
             pickle.dump(gaddag, f)
             
     results = gaddag_lib.find_second_word(starter, rack, gaddag)

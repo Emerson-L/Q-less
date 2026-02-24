@@ -159,3 +159,29 @@ def numbers_to_letters(nums: list[int]) -> list[str]:
         A list of characters corresponding to the given numbers 
     """
     return [chr(num + 97).upper() for num in nums]
+
+def chars74k_sample_nums_to_characters(nums: list[int]) -> list[str]:
+    """
+    Converts sample numbers from the Chars74k dataset into their respective characters
+
+    Parameters
+    ----------
+    nums: list of int
+        sample numbers to convert
+    
+    Returns
+    -------
+    list of str
+        characters that correspond with the sample numbers
+    """
+    result = []
+    for n in nums:
+        if 1 <= n <= 10:
+            result.append(chr(n - 1 + ord('0')))
+        elif 11 <= n <= 36:
+            result.append(chr(n - 11 + ord('A')))
+        elif 37 <= n <= 62:
+            result.append(chr(n - 37 + ord('a')))
+        else:
+            raise ValueError('Number out of range')
+    return result

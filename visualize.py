@@ -45,23 +45,13 @@ def plot_board(board:np.ndarray, letters:list[str], adjacents:Optional[np.ndarra
     # Plot letters
     for i in range(width):
         for j in range(width):
-            ax.text(
-                j, i, board[i, j],
-                ha='center', va='center',
-                fontsize=12, fontweight='bold'
-            )
+            ax.text(j, i, board[i, j], ha='center', va='center', fontsize=12, fontweight='bold')
 
     # Color the adjacents
     if adjacents is not None:
         mask = np.zeros((24, 24))
         mask[adjacents[:, 0], adjacents[:, 1]] = 1
-        ax.imshow(
-            mask,
-            cmap='Reds',
-            alpha=0.5,
-            vmin=0,
-            vmax=1
-        )
+        ax.imshow(mask, cmap='Reds', alpha=0.5, vmin=0,vmax=1)
 
     if output_file is not None:
         plt.savefig(output_file, dpi=300)
@@ -137,6 +127,7 @@ def plot_probs(letters:list[str], probs:np.ndarray, output_file:Optional[str]=No
         File path ending in .png to optionally save the board image
     """
     plt.bar(letters, probs)
+    plt.ylim(0, 1)
     plt.xlabel('Letter')
     plt.ylabel('Probability')
    
