@@ -138,7 +138,7 @@ def load_and_test(testloader:DataLoader, model_path:str, plot_wrong_predictions:
 
 if __name__ == '__main__':
 
-    model_to_test = './model_byclass_10_aug_3random.pth'
+    model_to_test = './model_10.pth'
     n_augments_rotation = 3
 
     # Train and test EMNIST
@@ -150,10 +150,10 @@ if __name__ == '__main__':
     # Use a combination of the two datasets instead
     x_train_emnist, y_train_emnist, x_test_emnist, y_test_emnist = wrangle.load_emnist_data(config.EMNIST_DATASET_NAME, n_augments_rotation=n_augments_rotation)
     x_train_chars, y_train_chars, x_test_chars, y_test_chars = wrangle.load_chars74k_data(n_augments_rotation=n_augments_rotation)
-    x_train = np.concatenate((x_train_emnist, x_train_chars))
-    y_train = np.concatenate((y_train_emnist, y_train_chars))
-    x_test = np.concatenate((x_test_emnist, x_test_chars))
-    y_test = np.concatenate((y_test_emnist, y_test_chars))
+    x_train = torch.cat((x_train_emnist, x_train_chars))
+    y_train = torch.cat((y_train_emnist, y_train_chars))
+    x_test = torch.cat((x_test_emnist, x_test_chars))
+    y_test = torch.cat((y_test_emnist, y_test_chars))
 
     trainloader, testloader = wrangle.make_dataloaders(x_train, y_train, x_test, y_test)
 

@@ -25,10 +25,10 @@ def load_emnist_data(dataset_name:str, n_augments_rotation:int=0) -> tuple[DataL
 
     Returns
     -------
-    x_train : np.ndarray
-    y_train : np.ndarray
-    x_test : np.ndarray
-    y_test : np.ndarray
+    x_train : torch.tensor
+    y_train : torch.tensor
+    x_test : torch.tensor
+    y_test : torch.tensor
     """
     train_images, train_labels = extract_training_samples(dataset_name)
     test_images, test_labels = extract_test_samples(dataset_name)
@@ -68,7 +68,7 @@ def load_emnist_data(dataset_name:str, n_augments_rotation:int=0) -> tuple[DataL
 
     x_train /= 255.0
     x_test /= 255.0
-    
+
     return x_train, y_train, x_test, y_test
 
 
@@ -83,10 +83,10 @@ def load_chars74k_data(n_augments_rotation:int=0) -> tuple[DataLoader, DataLoade
 
     Returns
     -------
-    x_train : np.ndarray
-    y_train : np.ndarray
-    x_test : np.ndarray
-    y_test : np.ndarray
+    x_train : torch.tensor
+    y_train : torch.tensor
+    x_test : torch.tensor
+    y_test : torch.tensor
     """
 
     images = []
@@ -124,10 +124,10 @@ def make_dataloaders(x_train:np.ndarray, y_train:np.ndarray, x_test:np.ndarray, 
 
     Parameters
     ----------
-    x_train : np.ndarray
-    y_train : np.ndarray
-    x_test : np.ndarray
-    y_test : np.ndarray
+    x_train : torch.tensor
+    y_train : torch.tensor
+    x_test : torch.tensor
+    y_test : torch.tensor
 
     Returns
     -------
