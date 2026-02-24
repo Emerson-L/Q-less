@@ -12,7 +12,7 @@ import config
 import visualize
 
 
-def load_emnist_data(dataset_name:str) -> tuple[DataLoader, DataLoader]:
+def load_emnist_data(dataset_name:str, n_augments_rotation:int=0) -> tuple[DataLoader, DataLoader]:
     """
     Loads emnist letters dataset into train and test DataLoaders
 
@@ -20,13 +20,15 @@ def load_emnist_data(dataset_name:str) -> tuple[DataLoader, DataLoader]:
     ----------
     dataset_name : str
         name of emnist dataset to load (supports 'byclass' and 'letters')
+    n_augments_rotation : int
+        Number of rotated augmentations to add in to the dataset for each image
 
     Returns
     -------
-    train_loader : torch DataLoader
-        DataLoader with train set
-    test_loader : torch DataLoader
-        DataLoader with test set
+    x_train : np.ndarray
+    y_train : np.ndarray
+    x_test : np.ndarray
+    y_test : np.ndarray
     """
     train_images, train_labels = extract_training_samples(dataset_name)
     test_images, test_labels = extract_test_samples(dataset_name)
@@ -44,6 +46,20 @@ def load_emnist_data(dataset_name:str) -> tuple[DataLoader, DataLoader]:
             test_images = test_images[test_mask]
             test_labels = test_labels[test_mask] - 10
 
+    def augment_set(images, labels):
+        augs = []
+        aug_labels = []
+        for image, label in zip(images, labels):
+            augs.extend(augment_rotate(image, n_augments_rotation))
+            aug_labels.extend([label] * n_augments_rotation)
+        images = np.concatenate((images, augs))
+        labels = np.concatenate((labels, aug_labels))
+        return images, labels
+
+    if n_augments_rotation > 0:
+        train_images, train_labels = augment_set(train_images, train_labels)
+        test_images, test_labels = augment_set(test_images, test_labels)
+
     x_train = torch.tensor(train_images).unsqueeze(1).float() 
     y_train = torch.tensor(train_labels).long()
 
@@ -52,36 +68,25 @@ def load_emnist_data(dataset_name:str) -> tuple[DataLoader, DataLoader]:
 
     x_train /= 255.0
     x_test /= 255.0
-
-    print(f'x_train shape: {x_train.shape}')
-    print(f'y_train shape: {y_train.shape}')
-    print(f'x_test shape: {x_test.shape}')
-    print(f'y_test shape: {y_test.shape}')
-
-    train_dataset = TensorDataset(x_train, y_train)
-    test_dataset = TensorDataset(x_test, y_test)
-
-    trainloader = DataLoader(train_dataset, batch_size=config.BATCH_SIZE, shuffle=True)
-    testloader = DataLoader(test_dataset, batch_size=config.BATCH_SIZE, shuffle=False)
-
-    return trainloader, testloader
+    
+    return x_train, y_train, x_test, y_test
 
 
-def load_chars74k_data(augment_rotation:bool=False) -> tuple[DataLoader, DataLoader]:
+def load_chars74k_data(n_augments_rotation:int=0) -> tuple[DataLoader, DataLoader]:
     """
     Loads chars74k letters dataset into train and test DataLoaders
 
     Parameters
     ----------
-    augment_rotation : bool
-        Whether to augment data by including rotated characters at 90, 180, and 270 degrees
+    n_augments_rotation : int
+        Number of rotated augmentations to add in to the dataset for each image
 
     Returns
     -------
-    train_loader : torch DataLoader
-        DataLoader with train set
-    test_loader : torch DataLoader
-        DataLoader with test set
+    x_train : np.ndarray
+    y_train : np.ndarray
+    x_test : np.ndarray
+    y_test : np.ndarray
     """
 
     images = []
@@ -96,8 +101,8 @@ def load_chars74k_data(augment_rotation:bool=False) -> tuple[DataLoader, DataLoa
                 inverted = cv.bitwise_not(resized)
                 
                 versions = [inverted]
-                if augment_rotation:
-                    versions.extend(augment_rotate(inverted))
+                if n_augments_rotation > 0:
+                    versions.extend(augment_rotate(inverted, n_augments_rotation))
 
                 for version in versions:
                     image_tensor = torch.tensor(version).unsqueeze(0).float()
@@ -110,17 +115,33 @@ def load_chars74k_data(augment_rotation:bool=False) -> tuple[DataLoader, DataLoa
 
     x_train, x_test, y_train, y_test = train_test_split(images, labels, test_size=0.15, random_state=42)
     x_train, x_test, y_train, y_test = torch.tensor(x_train), torch.tensor(x_test), torch.tensor(y_train), torch.tensor(y_test)
-    
-    print(f'x_train shape: {x_train.shape}')
-    print(f'y_train shape: {y_train.shape}')
-    print(f'x_test shape: {x_test.shape}')
-    print(f'y_test shape: {y_test.shape}')
+
+    return x_train, y_train, x_test, y_test
+
+def make_dataloaders(x_train:np.ndarray, y_train:np.ndarray, x_test:np.ndarray, y_test:np.ndarray) -> tuple[DataLoader, DataLoader]:
+    """
+    Makes dataloader objects from train and test images and labels
+
+    Parameters
+    ----------
+    x_train : np.ndarray
+    y_train : np.ndarray
+    x_test : np.ndarray
+    y_test : np.ndarray
+
+    Returns
+    -------
+    train_loader : torch DataLoader
+        DataLoader with train set
+    test_loader : torch DataLoader
+        DataLoader with test set
+    """
 
     train_dataset = TensorDataset(x_train, y_train)
     test_dataset = TensorDataset(x_test, y_test)
 
     trainloader = DataLoader(train_dataset, batch_size=config.BATCH_SIZE, shuffle=True)
-    testloader = DataLoader(test_dataset, batch_size=config.BATCH_SIZE, shuffle=False)
+    testloader = DataLoader(test_dataset, batch_size=config.BATCH_SIZE, shuffle=True)
 
     return trainloader, testloader
 
@@ -158,7 +179,7 @@ def load_qless_test_data(test_images_dir:str) -> DataLoader:
 
     return loader
 
-def augment_rotate(image:np.ndarray, n_augs:int = 3):
+def augment_rotate(image:np.ndarray, n_augs:int):
     """
     Takes an image and generates augmented versions of it by rotating
     

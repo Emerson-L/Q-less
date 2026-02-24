@@ -138,16 +138,32 @@ def load_and_test(testloader:DataLoader, model_path:str, plot_wrong_predictions:
 
 if __name__ == '__main__':
 
-    model_to_test = './model_chars74k_10_aug3.pth'
+    model_to_test = './model_byclass_10_aug_3random.pth'
+    n_augments_rotation = 3
 
     # Train and test EMNIST
-    #trainloader, testloader = wrangle.load_emnist_data(config.EMNIST_DATASET_NAME)
-
+    #x_train, y_train, x_test, y_test = wrangle.load_emnist_data(config.EMNIST_DATASET_NAME, n_augments_rotation=n_augments_rotation)
+    
     # Train and test chars74k
-    trainloader, testloader = wrangle.load_chars74k_data(augment_rotation=True)
+    #x_train, y_train, x_test, y_test = wrangle.load_chars74k_data(n_augments_rotation=n_augments_rotation)
 
-    #losses = train(trainloader, config.MODEL_PATH)
-    #visualize.plot_loss_curve(losses)
+    # Use a combination of the two datasets instead
+    x_train_emnist, y_train_emnist, x_test_emnist, y_test_emnist = wrangle.load_emnist_data(config.EMNIST_DATASET_NAME, n_augments_rotation=n_augments_rotation)
+    x_train_chars, y_train_chars, x_test_chars, y_test_chars = wrangle.load_chars74k_data(n_augments_rotation=n_augments_rotation)
+    x_train = np.concatenate((x_train_emnist, x_train_chars))
+    y_train = np.concatenate((y_train_emnist, y_train_chars))
+    x_test = np.concatenate((x_test_emnist, x_test_chars))
+    y_test = np.concatenate((y_test_emnist, y_test_chars))
+
+    trainloader, testloader = wrangle.make_dataloaders(x_train, y_train, x_test, y_test)
+
+    print(f'x_train shape: {x_train.shape}')
+    print(f'y_train shape: {y_train.shape}')
+    print(f'x_test shape: {x_test.shape}')
+    print(f'y_test shape: {y_test.shape}')
+
+    losses = train(trainloader, config.MODEL_PATH)
+    visualize.plot_loss_curve(losses)
 
     accuracy = load_and_test(testloader, model_to_test)
     print(f'Accuracy on test set: {accuracy:.2f}%')
@@ -157,9 +173,12 @@ if __name__ == '__main__':
                          './assets/letter_images/IMG_3297/',
                          './assets/letter_images/IMG_3298/',
                          './assets/letter_images/IMG_3299/',]
+    
+    Qless_accuracies = []
     for dir in test_images_dirs:
         Qless_testloader = wrangle.load_qless_test_data(dir)
         Qless_accuracy = load_and_test(Qless_testloader, model_to_test, plot_wrong_predictions=True)
         print(f'Accuracy on {Path(dir).stem}: {Qless_accuracy:.2f}%')
-
+        Qless_accuracies.append(Qless_accuracy)
+    print(f'Average accuracy across dirs: {np.mean(Qless_accuracies):.2f}')
 
