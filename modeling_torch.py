@@ -1,10 +1,16 @@
+"""
+modeling_torch.py
+For training, testing, and saving a model using pytorch
+Derived from pytorch CNN tutorial: https://docs.pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
+Example usage to train model: python modeling_torch.py
+"""
+
 import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from pathlib import Path
-import cv2 as cv
 
 import visualize
 import utils
@@ -109,13 +115,6 @@ def load_and_test(testloader:DataLoader, model_path:str, plot_wrong_predictions:
     net = Net()
     net.load_state_dict(torch.load(model_path, weights_only=True))
 
-    dataiter = iter(testloader)
-    images, labels = next(dataiter)
-
-    outputs = net(images)
-
-    _, predicted = torch.max(outputs, 1)
-
     correct = 0
     total = 0
     with torch.no_grad():
@@ -136,9 +135,70 @@ def load_and_test(testloader:DataLoader, model_path:str, plot_wrong_predictions:
     accuracy = 100 * correct / total
     return accuracy
 
+def load_and_predict(letter_images:list[np.ndarray], model_path:str) -> tuple[list[int], list[float]]:
+    """
+    Loads unlabeled images and make predictions on them
+
+    Parameters
+    ----------
+    letter_images : list of np.ndarray
+        list of images
+    model_path : str
+        path to model .pth to use for prediction
+    
+    Returns
+    -------
+    predicted : list of int
+        list of predictions for each image
+    softmaxed_outputs : list of float
+        lists of probabilities for each class (A-Z) for each image
+    """
+    images = torch.tensor(letter_images).unsqueeze(1).float()
+    images /= 255.0
+
+    net = Net()
+    net.load_state_dict(torch.load(model_path, weights_only=True))
+    outputs = net(images)
+    softmaxed_outputs = F.softmax(outputs, dim=1)
+    _, predicted = torch.max(outputs, 1)
+   
+    predicted = predicted.tolist()
+    softmaxed_outputs = softmaxed_outputs.tolist()
+
+    return predicted, softmaxed_outputs
+
+def eval_labeled_qless_test_data(model_path:str, plot_wrong_predictions:bool=False):
+    """
+    Loads a given model and tests on all Qless data that has been labeled
+
+    Parameters
+    ----------
+    model_path : str
+        path to a model.pth to load and test
+    plot_wrong_predictions : bool
+        whether to plot the predictions that weren't correct
+
+    Returns
+    -------
+    avg_accuracy : float
+        average accuracy across all letters
+    """
+    
+    test_images_dirs = [dir for dir in Path('./assets/letter_images').glob('*') if dir.is_dir()]
+
+    Qless_accuracies = []
+    for dir in test_images_dirs:
+        if Path(f'{dir}/labels.txt').exists():
+            Qless_testloader = wrangle.load_qless_test_data(dir)
+            Qless_accuracy = load_and_test(Qless_testloader, model_path, plot_wrong_predictions=plot_wrong_predictions)
+            print(f'Accuracy on {Path(dir).stem}: {Qless_accuracy:.2f}%')
+            Qless_accuracies.append(Qless_accuracy)
+    avg_accuracy = np.mean(Qless_accuracies)
+    print(f'Average accuracy across dirs: {avg_accuracy:.2f}%')
+    return avg_accuracy
+
 if __name__ == '__main__':
 
-    model_to_test = './model_10.pth'
     n_augments_rotation = 3
 
     # Train and test EMNIST
@@ -155,30 +215,18 @@ if __name__ == '__main__':
     x_test = torch.cat((x_test_emnist, x_test_chars))
     y_test = torch.cat((y_test_emnist, y_test_chars))
 
-    trainloader, testloader = wrangle.make_dataloaders(x_train, y_train, x_test, y_test)
-
     print(f'x_train shape: {x_train.shape}')
     print(f'y_train shape: {y_train.shape}')
     print(f'x_test shape: {x_test.shape}')
     print(f'y_test shape: {y_test.shape}')
 
+    trainloader, testloader = wrangle.make_dataloaders(x_train, y_train, x_test, y_test)
+
     losses = train(trainloader, config.MODEL_PATH)
     visualize.plot_loss_curve(losses)
 
-    accuracy = load_and_test(testloader, model_to_test)
+    accuracy = load_and_test(testloader, config.MODEL_PATH)
     print(f'Accuracy on test set: {accuracy:.2f}%')
 
-    # Test our model on real Qless data
-    test_images_dirs = ['./assets/letter_images/IMG_3296/',
-                         './assets/letter_images/IMG_3297/',
-                         './assets/letter_images/IMG_3298/',
-                         './assets/letter_images/IMG_3299/',]
-    
-    Qless_accuracies = []
-    for dir in test_images_dirs:
-        Qless_testloader = wrangle.load_qless_test_data(dir)
-        Qless_accuracy = load_and_test(Qless_testloader, model_to_test, plot_wrong_predictions=True)
-        print(f'Accuracy on {Path(dir).stem}: {Qless_accuracy:.2f}%')
-        Qless_accuracies.append(Qless_accuracy)
-    print(f'Average accuracy across dirs: {np.mean(Qless_accuracies):.2f}')
+    #eval_labeled_qless_test_data('./model_combined_10_aug_3random.pth')
 

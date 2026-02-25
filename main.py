@@ -37,12 +37,14 @@ def test_trie():
         print(f'{word} is {trie_lib.check_word(word, trie)}')
 
 
-def starter_word():
-    dice = utils.load_dice(config.DICE_CSV_PATH)
-    letters = utils.roll(dice)
+def starter_word(letters:list[str]=None):
+    if letters is None:
+        dice = utils.load_dice(config.DICE_CSV_PATH)
+        letters = utils.roll(dice)
+
     words = utils.load_words()
-    print(f'Rolled letters: {letters}')
-    #print(f'Total words: {len(words)}')
+    print(f'Letters: {letters}')
+    print(f'Total words: {len(words)}')
 
     valid_words = utils.get_valid_words(letters, words)
 

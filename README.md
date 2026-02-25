@@ -30,12 +30,13 @@ For best model performance in selecting the correct dice in the pictures you tak
 - [EMNIST Dataset](https://www.nist.gov/itl/products-and-services/emnist-dataset)
 - [Chars74k Dataset](https://teodecampos.github.io/chars74k/)
 
-
 **Troubleshooting**
 - When trying to download EMNIST data, if getting 'zipfile.BadZipFile: File is not a zip file', download the emnist dataset from the website, rename gzip.zip to emnist.zip, and move it to your home directory at ~/.cache/emnist
 
 **TODO**
 - find_dice.py: Convert everything possible that uses skimage to use opencv (i.e. transform, but probably not measure)
+- Make full pipeline from image to letter predictions
+- Making starting word be as long as possible for recursive efficiency
 
 **Ideas For Improvement**
 - Somehow rotate our letters before predicting on them
