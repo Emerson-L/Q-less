@@ -102,6 +102,16 @@ def get_valid_words(roll: list[str], words: list[str]) -> list[str]:
 def find_anchors(board:np.ndarray) -> np.ndarray:
     """
     Find the anchors in a board and return an array of the coordinates of sqaures adjacent to those that are filled
+
+    Parameters
+    ----------
+    board : np.ndarray
+        The current Q-Less game board.
+
+    Returns
+    -------
+    np.ndarray
+        A list of coordinates on the board that are valid starting positions for another word.
     """
     filled = np.argwhere(board != '')
     adjacent = np.full((board.shape[0], board.shape[1]), False)
