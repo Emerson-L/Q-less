@@ -14,32 +14,24 @@ def is_possible_roll(roll: list[str], dice: list[list[str]]) -> bool:
         print("Roll length and dice length must match.")
         return False
     dice_sides = list(map(set, dice))
-    for die in dice_sides:
-        print(die)
     G = [[False for _ in range(len(dice))] for _ in range(len(dice))]
     for i, letter in enumerate(roll):
         for j, sides in enumerate(dice_sides):
             if letter in sides:
                 G[i][j] = True
-    for row in G:
-        print(row)
     matches = [-1] * len(dice)
     for u in range(len(roll)):
         seen = [False] * len(dice)
         if not bpm(G, u, seen, matches):
             return False
-    print(matches)
-    visualize_graph(matches, dice, roll)
+    # visualize_graph(matches, dice, roll)
     return True
 
 def bpm(G: list[list[bool]], u: int, seen: list[bool], matches: list[int]) -> bool:
-    print(f"Trying to find match for letter {u}")
     for v in range(len(matches)):
         if (G[u][v]) and not seen[v]:
-            print(f"Die {v} is possible.")
             seen[v] = True
             if matches[v] < 0 or bpm(G, matches[v], seen, matches):
-                print(f"Assigning letter {u} to die {v}.")
                 matches[v] = u
                 return True
     return False
@@ -77,20 +69,9 @@ def visualize_graph(matches: list[int], dice: list[list[str]], roll: list[str]) 
     plt.axis('off') # Hide axis
     plt.show()
 
-def test_bpm():
-    dice = utils.load_dice(DICE_CSV_PATH)
-    print("Dice:")
-    for die in dice:
-        print(''.join(die).upper())
-    roll = utils.roll(dice)
-    print("Roll: ", end=None)
-    for letter in roll:
-        print(letter, end=' ')
-    print()
-    print(f"is_possible_roll(roll, dice): {is_possible_roll(roll, dice)}")
-
 def main():
-    test_bpm()
+    dice = utils.load_dice(DICE_CSV_PATH)
+    long_words = [word for word in utils.load_words() if len(word) == 12 and is_possible_roll(list(word), dice)]
 
 if __name__ == '__main__':
-    test_bpm()
+    main()
