@@ -77,6 +77,9 @@ def contours_to_letter_images(image:np.ndarray, contours:list[np.ndarray]) -> li
         image that contains the given contours
     contours : list of np.ndarray
         list of contours to convert to images
+
+    Returns
+    -------
     """
     PADDING_SCALAR = 1.3
 
@@ -109,20 +112,57 @@ def contours_to_letter_images(image:np.ndarray, contours:list[np.ndarray]) -> li
 
     return dice_images
 
-def generate_letter_images(dice_images_dir:str, letter_images_dir:str) -> None:
-    Path(letter_images_dir).mkdir(exist_ok=True)
-    for image_path in Path(dice_images_dir).glob('*.JPG'):
+def generate_letter_images(dice_images_path:str, letter_images_dir:str=None) -> list[np.ndarray]:
+    """
+    Generates 28x28 letter images from an image of dice
+
+    Parameters
+    ----------
+    dice_images_path : str
+        Path to a single .JPG image or directory of .JPG images
+
+    letter_images_dir : str
+        path to a directory to put. Will be made and images written into it if provided.
+
+    Returns
+    -------
+    out_images : list of np.ndarray
+        List of 28x28 grayscaled images of letters
+    """
+
+    write = letter_images_dir is not None
+    if write:
+        Path(letter_images_dir).mkdir(exist_ok=True)
+
+    images_path = Path(dice_images_path)
+
+    if images_path.is_dir():
+        in_images = images_path.glob('*.JPG')
+    elif images_path.exists() and images_path.suffix == '.JPG':
+        in_images = [images_path]
+    else:
+        raise ValueError(f'Invalid image directory or .JPG path: {images_path}')
+    
+    out_images = []
+    for image_path in in_images:
         image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
   
         contours = get_contours(image)
         letter_images = contours_to_letter_images(image, contours)
 
-        this_image_dir = f'{letter_images_dir}/{image_path.stem}/'
-        Path(this_image_dir).mkdir(exist_ok=True)
+        if write:
+            this_image_dir = f'{letter_images_dir}/{image_path.stem}/'
+            Path(this_image_dir).mkdir(exist_ok=True)
+        
         for i, letter_image in enumerate(letter_images):
             cv2_image = (letter_image * 255).astype(np.uint8)
             cv2_inverted = cv.bitwise_not(cv2_image)
-            cv.imwrite(f'{this_image_dir}/letter_{i}.png', cv2_inverted)
+            out_images.append(cv2_inverted)
+
+            if write:
+                cv.imwrite(f'{this_image_dir}/letter_{i}.png', cv2_inverted)
+
+    return out_images
 
 if __name__ == '__main__':
     generate_letter_images(config.DICE_IMAGES_DIR, config.LETTER_IMAGES_DIR)
