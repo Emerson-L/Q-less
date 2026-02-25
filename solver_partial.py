@@ -41,8 +41,7 @@ def first_two_words(letters:list[str]=None):
         letters.remove(letter)
     rack = Counter(letters)
     if Path(config.GADDAG_PKL_PATH).exists():
-        with open(config.GADDAG_PKL_PATH, 'rb') as f:
-            gaddag = pickle.load(f)
+        gaddag = gaddag_lib.load_gaddag()
     else:
         gaddag = gaddag_lib.get_gaddag(words)
         with open(config.TRIE_PKL_PATH, 'wb') as f:

@@ -2,7 +2,8 @@ import utils
 from treelib.tree import Tree
 from collections import Counter
 from typing import Optional
-import random
+import pickle
+from pathlib import Path
 
 import config
 
@@ -60,6 +61,9 @@ def get_gaddag(words: list[str]) -> dict:
 
 
 def find_second_word(first_word: str, rack: Counter[str], gaddag: dict) -> Optional[tuple[int, list[tuple[int, str]]]]:
+    """
+    Docstring
+    """
     for i, letter in enumerate(first_word):
         if letter not in gaddag:
             continue
@@ -70,6 +74,9 @@ def find_second_word(first_word: str, rack: Counter[str], gaddag: dict) -> Optio
     return
 
 def _find_second_word(rack: Counter[str], node: dict, path: str, paths: list[str]) -> None:
+    """
+    Docstring
+    """
     if config.EOW in node:
         return paths.append(path)
     for letter in rack:
@@ -83,11 +90,17 @@ def _find_second_word(rack: Counter[str], node: dict, path: str, paths: list[str
     return
 
 def get_word(path: str) -> tuple[int, str]:
+    """
+    Docstring
+    """
     idx = path.find(config.BREAK) - 1
     prefix, suffix = path.split(config.BREAK)
     return (idx, prefix[::-1] + suffix)
 
 def test_gaddag():
+    """
+    Docstring
+    """
     words = utils.load_words()
     gaddag = get_gaddag(words)
     tree = Tree()
@@ -95,3 +108,17 @@ def test_gaddag():
 
     add_nodes(tree, 'root', gaddag)
     tree.show()
+
+def load_gaddag():
+    """
+    Docstring
+    """
+    if Path(config.GADDAG_PKL_PATH).exists():
+        with open(config.GADDAG_PKL_PATH, 'rb') as f:
+            gaddag = pickle.load(f)
+    else:
+        words = utils.load_words()
+        gaddag = get_gaddag(words)
+        with open(config.GADDAG_PKL_PATH, 'wb') as f:
+            pickle.dump(gaddag, f)
+    return gaddag

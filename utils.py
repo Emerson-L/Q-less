@@ -5,6 +5,8 @@ from collections import Counter
 import csv
 from assets import twl
 
+import config
+
 def is_qless_word(word: str) -> bool:
     """
     Return if a word is a valid Q-less word or not.
@@ -185,3 +187,44 @@ def chars74k_sample_nums_to_characters(nums: list[int]) -> list[str]:
         else:
             raise ValueError('Number out of range')
     return result
+
+def is_possible_roll(roll: list[str], dice: list[list[str]]) -> bool:
+    """
+    Docstring
+    """
+    if len(roll) != len(dice):
+        print("Roll length and dice length must match.")
+        return False
+    dice_sides = list(map(set, dice))
+    G = [[False for _ in range(len(dice))] for _ in range(len(dice))]
+    for i, letter in enumerate(roll):
+        for j, sides in enumerate(dice_sides):
+            if letter in sides:
+                G[i][j] = True
+    matches = [-1] * len(dice)
+    for u in range(len(roll)):
+        seen = [False] * len(dice)
+        if not bipartite_match(G, u, seen, matches):
+            return False
+    # visualize_bpm_graph(matches, dice, roll)
+    return True
+
+def bipartite_match(G: list[list[bool]], u: int, seen: list[bool], matches: list[int]) -> bool:
+    """
+    Docstring
+    """
+    for v in range(len(matches)):
+        if (G[u][v]) and not seen[v]:
+            seen[v] = True
+            if matches[v] < 0 or bipartite_match(G, matches[v], seen, matches):
+                matches[v] = u
+                return True
+    return False
+
+def find_all_possible_12_letter_words():
+    """
+    Docstring
+    """
+    dice = load_dice(config.DICE_CSV_PATH)
+    long_words = [word for word in load_words() if len(word) == 12 and is_possible_roll(list(word), dice)]
+    print(long_words)

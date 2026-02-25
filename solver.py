@@ -1,40 +1,65 @@
-import matplotlib.pyplot as plt
+import numpy as np
+from enum import Enum
+import random
 
-from gaddag_lib import get_gaddag
+import gaddag_lib
 import utils
 import config
+import visualize
+
+class Orientation(Enum):
+    VERTICAL = 1
+    HORIZONTAL = 2
+
+class Solver:
+    def __init__(self, start_rack:list[str]):
+        self.rack = start_rack
+        self.valid_words = utils.get_valid_words(letters, utils.load_words())
+        self.gaddag = gaddag_lib.load_gaddag()
+        self.board = self.make_empty_board()
+
+    def make_empty_board(self):
+        return np.full((13, 13), '', dtype='<U1')
+    
+    def play_word(self, word:str, starting_pos:tuple[int, int], orientation:Orientation):
+        for idx, char in enumerate(word):
+            if orientation == Orientation.HORIZONTAL:
+                self.board[starting_pos[0], starting_pos[1] + idx] = char.upper()
+            if orientation == Orientation.VERTICAL:
+                self.board[starting_pos[0] + idx, starting_pos[1]] = char.upper()
+
+    def unplay_word(self, word:str, starting_pos:tuple[int, int], hook_pos:tuple[int, int], orientation:Orientation):
+        for idx, char in enumerate(word):
+            # row = 
+            # col = 
+            # if 
+            if orientation == Orientation.HORIZONTAL:
+                self.board[starting_pos[0], starting_pos[1] + idx] = ''
+            if orientation == Orientation.VERTICAL:
+                self.board[starting_pos[0] + idx, starting_pos[1]] = ''
+        # if pos = hook_pos we continue
+
+    def solve(self):
+        for valid_word in sorted(self.valid_words, key=len, reverse=True):
+            self.play_word(valid_word, (7, 7 - len(valid_word) // 2), Orientation.HORIZONTAL)
+            visualize.plot_board(solver.board, letters)
+        # for each letter in that word, call dfs
+    
+    def dfs(self):
+        pass
+
+    def find_hooks():
+        pass
+        # find_adjacents
+        # then find_adjacents of those adjacents
+        # has no adjacents thats fine
+        # has two adjacents thats fine
 
 
-def is_possible_roll(roll: list[str], dice: list[list[str]]) -> bool:
-    if len(roll) != len(dice):
-        print("Roll length and dice length must match.")
-        return False
-    dice_sides = list(map(set, dice))
-    G = [[False for _ in range(len(dice))] for _ in range(len(dice))]
-    for i, letter in enumerate(roll):
-        for j, sides in enumerate(dice_sides):
-            if letter in sides:
-                G[i][j] = True
-    matches = [-1] * len(dice)
-    for u in range(len(roll)):
-        seen = [False] * len(dice)
-        if not bpm(G, u, seen, matches):
-            return False
-    # visualize_bpm_graph(matches, dice, roll)
-    return True
-
-def bpm(G: list[list[bool]], u: int, seen: list[bool], matches: list[int]) -> bool:
-    for v in range(len(matches)):
-        if (G[u][v]) and not seen[v]:
-            seen[v] = True
-            if matches[v] < 0 or bpm(G, matches[v], seen, matches):
-                matches[v] = u
-                return True
-    return False
-
-def main():
-    dice = utils.load_dice(config.DICE_CSV_PATH)
-    long_words = [word for word in utils.load_words() if len(word) == 12 and is_possible_roll(list(word), dice)]
 
 if __name__ == '__main__':
-    main()
+    dice = utils.load_dice(config.DICE_CSV_PATH)
+    letters = utils.roll(dice)
+    solver = Solver(letters)
+    #solver.play_word('blarf', (11, 11), Orientation.HORIZONTAL)
+    solver.solve()
