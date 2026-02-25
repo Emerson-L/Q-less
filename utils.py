@@ -124,7 +124,7 @@ def find_anchors(board:np.ndarray) -> np.ndarray:
             if not any((filled == possible_adjacent).all(axis=1)):
                 adjacent[possible_adjacent] = True
 
-    return np.argwhere(adjacent == True)
+    return np.argwhere(adjacent)
 
 def letters_to_numbers(letters:list[str]|str) -> list[int]:
     """

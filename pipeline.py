@@ -27,8 +27,6 @@ def predict_letters_from_dice_image(image_path:str, model_path:str):
     preds, probs = modeling_torch.load_and_predict(letter_images, model_path)
     pred_letters = utils.numbers_to_letters(preds)
 
-    #cross check with dice.csv
-
     return pred_letters
 
 

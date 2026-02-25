@@ -7,34 +7,8 @@ from treelib.tree import Tree
 
 import utils
 import config
-import trie_lib
 import visualize
 import gaddag_lib
-
-def test_gaddag():
-    words = utils.load_words()
-    gaddag = gaddag_lib.get_gaddag(words)
-    tree = Tree()
-    tree.create_node(tag='Root', identifier='root')
-
-    gaddag_lib.add_nodes(tree, 'root', gaddag)
-    tree.show()
-
-
-def test_trie():
-    words = utils.load_words()
-    if Path(config.TRIE_PKL_PATH).exists():
-        with open(config.TRIE_PKL_PATH, 'rb') as f:
-            trie = pickle.load(f)
-    else:
-        trie = trie_lib.generate_trie(words)
-        with open(config.TRIE_PKL_PATH, 'wb') as f:
-            pickle.dump(trie, f)
-
-
-    words_test = ['aardvark', 'blarf', 'poop', 'fantastic']
-    for word in words_test:
-        print(f'{word} is {trie_lib.check_word(word, trie)}')
 
 
 def starter_word(letters:list[str]=None):

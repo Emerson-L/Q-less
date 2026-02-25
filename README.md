@@ -29,13 +29,14 @@ For best model performance in selecting the correct dice in the pictures you tak
 - [Appel and Jacobson Scrabble Paper](https://www.cs.cmu.edu/afs/cs/academic/class/15451-s06/www/lectures/scrabble.pdf)
 - [EMNIST Dataset](https://www.nist.gov/itl/products-and-services/emnist-dataset)
 - [Chars74k Dataset](https://teodecampos.github.io/chars74k/)
+- [How do we know if we made decent letter predictions? (Bipartite Matching)](https://www.geeksforgeeks.org/dsa/maximum-bipartite-matching/)
+- [PyTorch CNN Tutorial](https://docs.pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html)
 
 **Troubleshooting**
 - When trying to download EMNIST data, if getting 'zipfile.BadZipFile: File is not a zip file', download the emnist dataset from the website, rename gzip.zip to emnist.zip, and move it to your home directory at ~/.cache/emnist
 
 **TODO**
 - find_dice.py: Convert everything possible that uses skimage to use opencv (i.e. transform, but probably not measure)
-- Make full pipeline from image to letter predictions
 - Making starting word be as long as possible for recursive efficiency
 
 **Ideas For Improvement**
