@@ -11,7 +11,7 @@ import visualize
 import gaddag_lib
 
 
-def starter_word(letters:list[str]=None):
+def first_two_words(letters:list[str]=None):
     if letters is None:
         dice = utils.load_dice(config.DICE_CSV_PATH)
         letters = utils.roll(dice)
@@ -63,4 +63,4 @@ def starter_word(letters:list[str]=None):
     visualize.plot_board(board, letters, adjacents)
 
 if __name__ == '__main__':
-    starter_word()
+    first_two_words()

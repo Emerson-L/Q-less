@@ -95,30 +95,3 @@ def test_gaddag():
 
     add_nodes(tree, 'root', gaddag)
     tree.show()
-
-
-if __name__ == '__main__':
-    dice = utils.load_dice(config.DICE_CSV_PATH)
-    letters = utils.roll(dice)
-    rack = Counter(letters)
-    words = utils.load_words()
-    gaddag = get_gaddag(words)
-    valid_words = utils.get_valid_words(letters, words)
-    starter = random.choice(valid_words)
-    print(f"Original Rack: {' '.join(letters).upper()}")
-    for letter in starter:
-        rack[letter] -= 1
-        letters.remove(letter)
-    results = find_second_word(starter, rack, gaddag)
-    if results:
-        i, (j, word) = results[0], results[1][0]
-    print(f"First word: {starter}")
-    print(f"New rack: {' '.join(letters).upper()}")
-    print(f"Second word: {word}")
-    print(f"Hook: {starter[i]} (index {i})")
-
-    # tree = Tree()
-    # tree.create_node(tag='Root', identifier='root')
-
-    # add_nodes(tree, 'root', gaddag)
-    # tree.show()

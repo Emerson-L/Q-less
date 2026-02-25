@@ -29,7 +29,7 @@ For best model performance in selecting the correct dice in the pictures you tak
 - [Appel and Jacobson Scrabble Paper](https://www.cs.cmu.edu/afs/cs/academic/class/15451-s06/www/lectures/scrabble.pdf)
 - [EMNIST Dataset](https://www.nist.gov/itl/products-and-services/emnist-dataset)
 - [Chars74k Dataset](https://teodecampos.github.io/chars74k/)
-- [How do we know if we made decent letter predictions? (Bipartite Matching)](https://www.geeksforgeeks.org/dsa/maximum-bipartite-matching/)
+- [How do we know if we made decent letter predictions? What are all of the possible 12 letter words? (Bipartite Matching)](https://www.geeksforgeeks.org/dsa/maximum-bipartite-matching/)
 - [PyTorch CNN Tutorial](https://docs.pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html)
 
 **Troubleshooting**

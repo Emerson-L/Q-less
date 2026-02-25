@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import networkx as nx
 from typing import Optional
 
 def plot_board(board:np.ndarray, letters:list[str], adjacents:Optional[np.ndarray]=None, output_file:Optional[str]=None):
@@ -157,3 +158,36 @@ def plot_loss_curve(losses:np.ndarray, output_file:Optional[str]=None) -> None:
         plt.close()
     else:
         plt.show()
+
+def visualize_bpm_graph(matches: list[int], dice: list[list[str]], roll: list[str]) -> None:
+    dice_nodes = list(map(lambda x: ''.join(x).upper(), dice))
+    B = nx.Graph()
+
+    # Add nodes with a 'bipartite' attribute to identify their set
+    B.add_nodes_from(roll, bipartite=0)
+    B.add_nodes_from(dice_nodes, bipartite=1)
+
+    edges = []
+    for i in range(len(matches)):
+        edges.append((roll[matches[i]], dice_nodes[i]))
+
+    B.add_edges_from(edges)
+
+    pos = nx.bipartite_layout(B, roll)
+
+    # 5. Draw the graph
+    plt.figure(figsize=(8, 5)) # Optional: adjust figure size
+    nx.draw_networkx(
+        B,
+        pos=pos,
+        with_labels=True,      # Show node labels
+        node_color=[
+            'skyblue' if node in roll else 'lightgreen' for node in B.nodes
+        ],
+        node_size=700,         # Adjust node size
+        edge_color='gray',     # Adjust edge color
+        font_size=12           # Adjust label font size
+    )
+    plt.title("Bipartite Graph Visualization")
+    plt.axis('off') # Hide axis
+    plt.show()
