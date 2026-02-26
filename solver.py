@@ -88,10 +88,17 @@ class Solver:
 
     def find_hooks(self):
         hooks = list(map(lambda x: Coord(x[0], x[1]), np.argwhere(self.board != '')))
+        orientations = [VERTICAL, HORIZONTAL]
         for square in hooks:
-            adjacent = square + HORIZONTAL
-            if not self.board[adjacent.unpack()] and self.is_valid_square(adjacent, VERTICAL):
-                pass
+            for sgn in [-1, 1]:
+                for i in range(2):
+                    major_axis, minor_axis = orientations[i], orientations[(i+1)%2]
+                    adjacent = square + sgn * major_axis
+                    if not self.board[adjacent.unpack()] and not self.is_valid_square(adjacent, minor_axis):
+                        self.board_mask[adjacent] = False
+                    else:
+                        self.board_mask[adjacent] = True
+        return hooks
         # find_adjacents
         # then find_adjacents of those adjacents
         # has no adjacents thats fine
