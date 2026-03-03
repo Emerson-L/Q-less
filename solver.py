@@ -42,6 +42,9 @@ class Coord:
         """Returns the tuple needed for NumPy indexing."""
         return (self.row, self.col)
     
+    def transpose(self):
+        return Coord(self.col, self.row)
+    
 VERTICAL = Coord(1, 0)
 HORIZONTAL = Coord(0, 1)
 
@@ -51,21 +54,18 @@ class Solver:
         self.valid_words = utils.get_valid_words(start_rack, utils.load_words())
         self.gaddag = gaddag_lib.load_gaddag()
         self.board = self.make_empty_board()
-        self.board_mask = self.make_board_mask()
+        self.invalid_squares = set()
 
     def make_empty_board(self):
-        return np.full((13, 13), '', dtype='<U1')
+        return np.full((config.BOARD_SIZE, config.BOARD_SIZE), '', dtype='<U1')
     
-    def make_board_mask(self):
-        return np.full((13, 13), True, dtype=bool)
-    
-    def play_word(self, word:str, starting_pos:Coord, orientation:Coord):
+    def play_word(self, word:str, starting_pos:Coord):
         for idx, char in enumerate(word):
-                self.board[(starting_pos + idx * orientation).unpack()] = char.upper()
+            self.board[(starting_pos + idx * HORIZONTAL).unpack()] = char.upper()
 
-    def unplay_word(self, word:str, starting_pos:Coord, orientation:Coord, hook_pos:Optional[Coord]=None):
+    def unplay_word(self, word:str, starting_pos:Coord, hook_pos:Optional[Coord]=None):
         for idx, char in enumerate(word):
-            cur_pos = starting_pos + idx * orientation
+            cur_pos = starting_pos + idx * HORIZONTAL
             if hook_pos and cur_pos == hook_pos:
                 continue
             self.board[cur_pos.unpack()] = ''
@@ -73,32 +73,48 @@ class Solver:
     def solve(self):
         for valid_word in sorted(self.valid_words, key=len, reverse=True):
             start_pos = Coord(7, 7 - len(valid_word) // 2)
-            self.play_word(valid_word, start_pos, HORIZONTAL)
-            visualize.plot_board(self.board, self.rack)
-            self.unplay_word(valid_word, start_pos, HORIZONTAL)
-        # for each letter in that word, call dfs
+
+            self.play_word(valid_word, start_pos)
+            self.find_hooks()
+            self.unplay_word(valid_word, start_pos)
+
     
     def dfs(self):
         pass
 
-    def is_valid_square(self, square: Coord, orientation: Coord) -> bool:
-        if len(self.board[(square + orientation).unpack()] + self.board[(square - orientation).unpack()]) == 1:
+    def is_valid_adjacent(self, square: Coord) -> bool:
+        if len(self.board[(square + VERTICAL).unpack()] + self.board[(square - VERTICAL).unpack()]) == 1:
             return False
         return True
+    
+    def is_valid_hook(self, square: Coord) -> bool:
+        if len(self.board[(square + HORIZONTAL).unpack()] + self.board[(square - HORIZONTAL).unpack()]) > 0:
+            return False
+        return True
+    
+    def coords_to_array(self, coords:list[Coord]) -> np.ndarray:
+        coord_array = np.array(list(map(lambda x: np.array([x.row, x.col]), coords)))
+        if len(coord_array) == 0:
+            return None
+        return coord_array
 
     def find_hooks(self):
-        hooks = list(map(lambda x: Coord(x[0], x[1]), np.argwhere(self.board != '')))
-        orientations = [VERTICAL, HORIZONTAL]
-        for square in hooks:
-            for sgn in [-1, 1]:
-                for i in range(2):
-                    major_axis, minor_axis = orientations[i], orientations[(i+1)%2]
-                    adjacent = square + sgn * major_axis
-                    if not self.board[adjacent.unpack()] and not self.is_valid_square(adjacent, minor_axis):
-                        self.board_mask[adjacent] = False
-                    else:
-                        self.board_mask[adjacent] = True
+        filled = list(map(lambda x: Coord(x[0], x[1]), np.argwhere(self.board != '')))
+        hooks = list(filter(self.is_valid_hook, filled))
+        self.update_board(filled)
         return hooks
+
+    def update_board(self, filled:list[Coord]):
+        self.invalid_squares = set()
+        for coord in filled:
+            for possible_square in [coord + HORIZONTAL, coord - HORIZONTAL]:
+                if not self.is_valid_adjacent(possible_square):
+                    self.invalid_squares.add(possible_square)
+        
+        print(self.board)
+        highlight_arr = self.coords_to_array(list(self.invalid_squares))
+        visualize.plot_board(self.board, self.rack, highlight_arr)
+    
         # find_adjacents
         # then find_adjacents of those adjacents
         # has no adjacents thats fine
@@ -112,3 +128,4 @@ if __name__ == '__main__':
     solver = Solver(letters)
     #solver.play_word('blarf', (11, 11), Orientation.HORIZONTAL)
     solver.solve()
+    solver.find_hooks()

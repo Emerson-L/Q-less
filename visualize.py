@@ -3,7 +3,9 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from typing import Optional
 
-def plot_board(board:np.ndarray, letters:list[str], adjacents:Optional[np.ndarray]=None, output_file:Optional[str]=None):
+import config
+
+def plot_board(board:np.ndarray, letters:list[str], highlights:Optional[np.ndarray]=None, output_file:Optional[str]=None):
     """
     Plots an image of the given board and either saves it to output_file if given or shows the plot.
 
@@ -13,11 +15,12 @@ def plot_board(board:np.ndarray, letters:list[str], adjacents:Optional[np.ndarra
         The Q-less game board
     letters : list of str
         The rolled letters for displaying at the bottom of the plot
-    adjacents : numpy array of (int, int)
-        Optional coordinates of squares that are adjacent to already filled sqaures to display
+    highlights : numpy array of (int, int)
+        Optional coordinates of squares that are to highlight
     output_file : str
         File path ending in .png to optionally save the board image
     """
+
     width = board.shape[0]
 
     fig, ax = plt.subplots(figsize=(8, 8))
@@ -49,9 +52,9 @@ def plot_board(board:np.ndarray, letters:list[str], adjacents:Optional[np.ndarra
             ax.text(j, i, board[i, j], ha='center', va='center', fontsize=12, fontweight='bold')
 
     # Color the adjacents
-    if adjacents is not None:
-        mask = np.zeros((24, 24))
-        mask[adjacents[:, 0], adjacents[:, 1]] = 1
+    if highlights is not None:
+        mask = np.zeros((config.BOARD_SIZE, config.BOARD_SIZE))
+        mask[highlights[:, 0], highlights[:, 1]] = 1
         ax.imshow(mask, cmap='Reds', alpha=0.5, vmin=0,vmax=1)
 
     if output_file is not None:
