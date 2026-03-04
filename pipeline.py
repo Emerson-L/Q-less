@@ -4,8 +4,7 @@ import find_dice
 import modeling_torch
 import utils
 import config
-
-import solver_partial
+from solver import Solver
 
 def predict_letters_from_dice_image(image_path:str, model_path:str):
     """
@@ -34,4 +33,5 @@ if __name__ == '__main__':
     pred_letters = predict_letters_from_dice_image('./assets/dice_images/paper_background/IMG_3296.JPG',
                                                    config.BENCHMARK_MODEL_PATH)
     pred_letters_lower = [char.lower() for char in pred_letters]
-    solver_partial.first_two_words(pred_letters_lower)
+    s = Solver(pred_letters_lower)
+    s.solve()
