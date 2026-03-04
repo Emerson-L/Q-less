@@ -20,6 +20,25 @@ logging.basicConfig(
 
 @dataclass(frozen=True)
 class Coord:
+    """
+    A coordinate class to specify positions on `Solver.board`.
+
+    Parameters
+    ----------
+    row : int
+        The row of the board.
+    col : int
+        The column of the board.
+
+    Attributes
+    ----------
+    row, col : see Parameters
+
+    Notes
+    -----
+    This class supports addition of `Coord` instance as well as multiplication with scalars, allowing
+    for easy positional updates. The initial values `row` and `col` should not be modified.
+    """
     row: int
     col: int
 
@@ -48,32 +67,110 @@ class Coord:
         return Coord(-self.row, -self.col)
 
     def unpack(self) -> tuple:
-        """Returns the tuple needed for NumPy indexing."""
+        """
+        Retrieve a tuple form of the coordinates.
+
+        Returns
+        -------
+        tuple of int
+            The first term is `row` and the second is `col`.
+        """
         return (self.row, self.col)
     
     def transpose(self):
+        """
+        Get the transpose of the position.
+
+        Returns
+        -------
+        Coord
+            A new coordinated initialized with `row` and `col` reversed.
+        """
         return Coord(self.col, self.row)
     
 VERTICAL = Coord(1, 0)
 HORIZONTAL = Coord(0, 1)
 
 class Solver:
-    def __init__(self, start_rack:list[str], verbose: bool = False):
+    """
+    Object to solve a given Q-less roll.
+
+    Parameters
+    ----------
+    start_rack : list of str
+        The resulting letters from a roll.
+    verbose : bool
+        Flag for whether or not to log the solving prcess.
+    visualize : bool
+        Flag for whether to visualize the solving process.
+
+    Attributes
+    ----------
+    start_rack, verbose, visualize : see Parameters
+    rack : Counter 
+        The counts of all letters present in the roll.
+    valid_words : list of str
+        All possible words that can be made with the roll from the lexicon.
+    gaddag : dict
+        The pre-generated GADDAG data structure created from the lexicon.
+    board : np.ndarray
+        A 2D array to represent the Q-less board.
+    invalid_squares : set of tuple of int
+        A set of coordinates that can't be played on for a given board position.
+
+    Methods
+    -------
+    solve()
+        Attempt to solve the given roll.
+    """
+    def __init__(self, start_rack:list[str], verbose: bool = False, visualize : bool = False):
+        self.start_rack = start_rack
         self.rack = Counter(start_rack)
         self.valid_words = utils.get_valid_words(start_rack, utils.load_words())
         self.gaddag = gaddag_lib.load_gaddag()
         self.board = self.make_empty_board()
         self.invalid_squares = set()
         self.verbose = verbose
+        self.visualize = visualize
 
-    def make_empty_board(self):
+    def make_empty_board(self) -> np.ndarray:
+        """
+        Initialize the Q-less board.
+
+        Returns
+        -------
+        np.ndarray
+            The board with size specified in `config.py`.
+        """
         return np.full((config.BOARD_SIZE, config.BOARD_SIZE), '', dtype='<U1')
     
-    def play_word(self, word:str, starting_pos:Coord):
+    def play_word(self, word:str, starting_pos:Coord) -> None:
+        """
+        Play a word onto the board.
+
+        Parameters
+        ----------
+        word : str
+            The word to play.
+        starting_pos : Coord
+            The position to start playing the word. Assumes horizontal orientation.
+        """
         for idx, char in enumerate(word):
             self.board[(starting_pos + idx * HORIZONTAL).unpack()] = char.upper()
 
-    def unplay_word(self, word:str, starting_pos:Coord, hook_pos:Optional[Coord]=None):
+    def unplay_word(self, word:str, starting_pos:Coord, hook_pos:Optional[Coord]=None) -> None:
+        """
+        Remove a played word from the board.
+
+        Parameters
+        ----------
+        word : str
+            The word to remove.
+        starting_pos : Coord
+            The position to remove the word from.
+        hook_pos : Coord, optional
+            The position of a letter to keep if it was a hook.
+        """
         for idx in range(len(word)):
             cur_pos = starting_pos + idx * HORIZONTAL
             if hook_pos and cur_pos == hook_pos:
@@ -93,13 +190,12 @@ class Solver:
             hooks = self.find_hooks()
             for hook in hooks:
                 if self.dfs(self.gaddag, hook, '', -1):
+                    visualize.plot_board(self.board, self.start_rack)
                     return
             self.board = self.board.T
             self.unplay_word(valid_word, start_pos)
             for letter in valid_word:
                 self.rack[letter] += 1
-
-        visualize.plot_board(self.board, list(self.rack.elements()))
 
     
     def dfs(self, gaddag_node: dict, cur_pos: Coord, cur_word: str, direction: int) -> bool:
@@ -123,6 +219,7 @@ class Solver:
             `True` if the board can be solved and `False` otherwise. In the first case, the board will be in the solved state.
         """
 
+        # Logging block
         if self.verbose:
             logging.info(f"Calling dfs(self, \n\tgaddag_node={gaddag_node.keys()}, \n\tcur_pos={cur_pos}, \n\tcur_word={cur_word}, \n\tdirection={direction})")
             board_str = "Board:\n"
@@ -200,6 +297,7 @@ class Solver:
             self.play_word(word, start_pos)
             if self.verbose:
                 logging.info(f"Playing word {word} at position {start_pos}")
+            if self.visualize:
                 visualize.plot_board(self.board, list(self.rack.elements()))
             for _ in range(2):
                 self.board = self.board.T
@@ -241,6 +339,12 @@ class Solver:
         -------
         bool
             `True` if the square is possible and `False` otherwise.
+
+        Notes
+        -----
+        For now, a square is said to be a valid adjacent if there are no letters next to it along the axis
+        that isn't being played along. This is far from a complete picture, as it may be possible to play
+        in a square if a valid word is simultaneously formed along the other axis.
         """
         # For now, only allow playing on an open board
         if not self.board[square.unpack()] and (self.board[(square + VERTICAL).unpack()] or self.board[(square - VERTICAL).unpack()]):
@@ -248,43 +352,83 @@ class Solver:
         return True
     
     def is_valid_hook(self, square: Coord) -> bool:
+        """
+        Check if a placed letter is a possible hook or not.
+
+        Parameters
+        ----------
+        square : Coord
+            The position of the square to check.
+
+        Returns
+        -------
+        bool
+            `True` if the square is a possible hook and `False` otherwise.
+
+        Notes
+        -----
+        Technically, any filled square is a valid hook. However, this function filters out hooks that
+        would extend existing words, as longer words are guaranteed to have been already played.
+        """
         if self.board[(square + HORIZONTAL).unpack()] + self.board[(square - HORIZONTAL).unpack()]:
             return False
         return True
     
     def coords_to_array(self, coords:list[tuple[int, int]]) -> Optional[np.ndarray]:
+        """
+        Convert a list of coordinates to a NumPy array format.
+
+        Parameters
+        ----------
+        coords : list of tuple of int
+            Raw tuples representing coordinates on the board.
+
+        Returns
+        -------
+        np.ndarray
+            A converted 2d array that is compatible with indexing operations, or None if coords is empty.
+        """
         coord_array = np.array(list(map(lambda x: np.array([x[0], x[1]]), coords)))
         if len(coord_array) == 0:
             return None
         return coord_array
 
+    # TODO : Refactor these methods so they aren't so weirdly connected. It seems that either
+    # get_filled_squares() should be a separate method, or filled_squares should be a stored
+    # and updated class attribute.
     def find_hooks(self) -> list[Coord]:
+        """
+        Find all hooks for a given board state and update the board.
+
+        Returns
+        -------
+        list of Coord
+            The positions on the board for each valid hook.
+        """
         filled = list(map(lambda x: Coord(x[0], x[1]), np.argwhere(self.board != '')))
         hooks = list(filter(self.is_valid_hook, filled))
         self.update_board(filled)
         return hooks
 
     def update_board(self, filled:list[Coord]) -> None:
+        """
+        Update which squares are valid to play on for the given board state.
+
+        Parameters
+        ----------
+        filled : list of Coord
+            The positions of all filled squares on the board.
+        """
         self.invalid_squares = set()
         for coord in filled:
             for possible_square in [coord + HORIZONTAL, coord - HORIZONTAL]:
                 if not self.is_valid_adjacent(possible_square):
                     self.invalid_squares.add(possible_square.unpack())
-        
-        highlight_arr = self.coords_to_array(list(self.invalid_squares))
-        # visualize.plot_board(self.board, list(self.rack.elements()), highlight_arr)
-    
-        # find_adjacents
-        # then find_adjacents of those adjacents
-        # has no adjacents thats fine
-        # has two adjacents thats fine
 
 
 
 if __name__ == '__main__':
     dice = utils.load_dice(config.DICE_CSV_PATH)
     letters = utils.roll(dice)
-    solver = Solver(letters)
-    #solver.play_word('blarf', (11, 11), Orientation.HORIZONTAL)
+    solver = Solver(letters, verbose=True)
     solver.solve()
-    solver.find_hooks()
