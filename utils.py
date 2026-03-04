@@ -1,6 +1,5 @@
 import numpy as np
 import random
-import nltk
 from collections import Counter
 import csv
 from assets import twl
@@ -101,34 +100,6 @@ def get_valid_words(roll: list[str], words: list[str]) -> list[str]:
             valid_words.append(word)
     return valid_words
 
-
-def find_anchors(board:np.ndarray) -> np.ndarray:
-    """
-    Find the anchors in a board and return an array of the coordinates of sqaures adjacent to those that are filled
-
-    Parameters
-    ----------
-    board : np.ndarray
-        The current Q-Less game board.
-
-    Returns
-    -------
-    np.ndarray
-        A list of coordinates on the board that are valid starting positions for another word.
-    """
-    filled = np.argwhere(board != '')
-    adjacent = np.full((board.shape[0], board.shape[1]), False)
-    for square in filled:
-        right = (square[0], square[1] + 1)
-        left = (square[0], square[1] - 1)
-        top = (square[0] - 1, square[1])
-        bottom = (square[0] + 1, square[1])
-        for possible_adjacent in right, left, bottom, top:
-            if not any((filled == possible_adjacent).all(axis=1)):
-                adjacent[possible_adjacent] = True
-
-    return np.argwhere(adjacent)
-
 def letters_to_numbers(letters:list[str]|str) -> list[int]:
     """
     Converts a list of characters or string of characters into their index in the alphabet.
@@ -191,7 +162,19 @@ def chars74k_sample_nums_to_characters(nums: list[int]) -> list[str]:
 
 def is_possible_roll(roll: list[str], dice: list[list[str]]) -> bool:
     """
-    Docstring
+    Find whether a given roll is possible from a set of dice using maximum bipartite matching.
+
+    Parameters
+    ----------
+    roll : list of str
+        The letters resulting from the potential roll.
+    dice : list of list of str
+        The sides of each die to compare against.
+
+    Returns
+    -------
+    bool
+        True if the roll is possible and false otherwise.
     """
     if len(roll) != len(dice):
         print("Roll length and dice length must match.")
@@ -212,7 +195,22 @@ def is_possible_roll(roll: list[str], dice: list[list[str]]) -> bool:
 
 def bipartite_match(G: list[list[bool]], u: int, seen: list[bool], matches: list[int]) -> bool:
     """
-    Docstring
+    Recurisively find a match for a node on a bipartite graph.
+
+    Parameters
+    ----------
+    G : list of list of bool
+        The adjacency matrix representing the graph.
+    u : int
+        The left node to try to match.
+    seen : list of bool
+        Markings for which right nodes have been seen so far.
+    matches : list of int
+        A list of which nodes have currently been matched.
+
+    Returns
+    -------
+    True if `u` can be matched and False otherwise.
     """
     for v in range(len(matches)):
         if (G[u][v]) and not seen[v]:
@@ -224,7 +222,7 @@ def bipartite_match(G: list[list[bool]], u: int, seen: list[bool], matches: list
 
 def find_all_possible_12_letter_words():
     """
-    Docstring
+    Find all the possible 12 letter words.
     """
     dice = load_dice(config.DICE_CSV_PATH)
     long_words = [word for word in load_words() if len(word) == 12 and is_possible_roll(list(word), dice)]

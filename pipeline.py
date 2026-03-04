@@ -5,7 +5,7 @@ import find_dice
 import modeling_torch
 import utils
 import config
-import solver
+from solver import Solver
 
 def predict_letters_from_dice_image(image_path:str, model_path:str):
     """
@@ -45,6 +45,6 @@ if __name__ == '__main__':
     if not utils.is_possible_roll(pred_letters_lower, true_dice):
         raise ValueError('Roll is not possible, machine learning bad')
 
-    solver = solver.Solver(pred_letters_lower, verbose=True)
+    solver = Solver(pred_letters_lower, verbose=True)
     solver.solve()
 
