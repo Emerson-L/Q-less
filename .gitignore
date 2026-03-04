@@ -8,3 +8,5 @@ model*.pth
 
 # Ignore the dataset
 /assets/chars74k_English/
+
+*.log
