@@ -6,6 +6,7 @@ import csv
 from assets import twl
 
 import config
+import visualize
 
 def is_qless_word(word: str) -> bool:
     """
@@ -206,7 +207,7 @@ def is_possible_roll(roll: list[str], dice: list[list[str]]) -> bool:
         seen = [False] * len(dice)
         if not bipartite_match(G, u, seen, matches):
             return False
-    # visualize_bpm_graph(matches, dice, roll)
+    #visualize.visualize_bpm_graph(matches, dice, roll)
     return True
 
 def bipartite_match(G: list[list[bool]], u: int, seen: list[bool], matches: list[int]) -> bool:

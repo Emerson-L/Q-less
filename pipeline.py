@@ -1,11 +1,11 @@
 import numpy as np
+import cv2 as cv
 
 import find_dice
 import modeling_torch
 import utils
 import config
-
-import solver_partial
+import solver
 
 def predict_letters_from_dice_image(image_path:str, model_path:str):
     """
@@ -31,7 +31,20 @@ def predict_letters_from_dice_image(image_path:str, model_path:str):
 
 
 if __name__ == '__main__':
-    pred_letters = predict_letters_from_dice_image('./assets/dice_images/paper_background/IMG_3296.JPG',
-                                                   config.BENCHMARK_MODEL_PATH)
+    true_dice = utils.load_dice(config.DICE_CSV_PATH)
+    
+    dice_image_path = './assets/dice_images/paper_background/IMG_3296.JPG'
+    dice_image = cv.imread(dice_image_path)
+    cv.imshow('Dice Image', dice_image)
+
+    pred_letters = predict_letters_from_dice_image(dice_image_path, config.BENCHMARK_MODEL_PATH)
     pred_letters_lower = [char.lower() for char in pred_letters]
-    solver_partial.first_two_words(pred_letters_lower)
+
+    print(f'Got roll: {pred_letters_lower}')
+
+    if not utils.is_possible_roll(pred_letters_lower, true_dice):
+        raise ValueError('Roll is not possible, machine learning bad')
+
+    solver = solver.Solver(pred_letters_lower, verbose=True)
+    solver.solve()
+

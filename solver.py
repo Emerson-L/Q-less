@@ -243,7 +243,7 @@ class Solver:
                 if letter != config.BREAK:
                     letter_str += letter + ' '
             logging.info(letter_str)
-            logging.info(f"Direction: {">>" if direction == 1 else "<<"}")
+            logging.info(f"Direction: {'>>' if direction == 1 else '<<'}")
 
         # Case 1: the rack is empty and all committed letters are played
         if self.empty_rack() and not cur_word:
@@ -283,7 +283,7 @@ class Solver:
         # Case 4: it is possible to move from the prefix to the suffix
         if config.BREAK in gaddag_node:
             if self.verbose:
-                logging.info(f"Trying BREAK")
+                logging.info("Trying BREAK")
                 logging.info('-' * 50)
             if self.dfs(gaddag_node[config.BREAK], cur_pos + HORIZONTAL * (len(cur_word) + 1), cur_word + config.BREAK, -direction):
                 return True

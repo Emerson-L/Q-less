@@ -1,20 +1,15 @@
 
 Q-less solver by Indy and Emerson
 
-**Plan**
-- Pick letters randomly from the set of 12 dice
-- Algorithm to take in letters and generate all possible starting words
-- Then use some sort of DFS to search for 2nd words
-- Once we have sets of possible words that can be made from those letters, can we put them together in a board?
+**TODO**
+- find_dice.py: Convert everything possible that uses skimage to use opencv (i.e. transform, but probably not measure)
+- Make UI that shows the dice image and the predictions for each dice right next to each die so that user can verify themselves if all of the letters are right?
 
-**Goals**
-- Is this set solvable?
-- How many ways are there to solve this set?
-- What are those ways?
+**Ideas For Improvement**
+- Somehow rotate our letters before predicting on them
 
 **Extensions**
-- Letter classifier so that we can input image of dice and then get the outputs
-- Board visualizer of possible outputs
+- How many ways are there to solve a set of dice?
 - Find a set of dice that maximizes probability that a roll is solvable
 
 
@@ -34,14 +29,6 @@ For best model performance in selecting the correct dice in the pictures you tak
 
 **Troubleshooting**
 - When trying to download EMNIST data, if getting 'zipfile.BadZipFile: File is not a zip file', download the emnist dataset from the website, rename gzip.zip to emnist.zip, and move it to your home directory at ~/.cache/emnist
-
-**TODO**
-- find_dice.py: Convert everything possible that uses skimage to use opencv (i.e. transform, but probably not measure)
-- Making starting word be as long as possible for recursive efficiency
-
-**Ideas For Improvement**
-- Somehow rotate our letters before predicting on them
-- Both EMNIST and Chars are vertically oriented, so we could augment for rotation pretty easily
 
 **All the 12 letter words!**
 astringently
