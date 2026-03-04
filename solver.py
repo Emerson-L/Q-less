@@ -14,7 +14,7 @@ import logging
 logging.basicConfig(
     filename='solver.log', 
     level=logging.INFO,
-    filemode='w',  # This overwrites the file every time
+    filemode='w',
     format='%(message)s'
 )
 
@@ -81,6 +81,9 @@ class Solver:
             self.board[cur_pos.unpack()] = ''
 
     def solve(self) -> None:
+        """
+        Attempt to solve the Q-less game for a given roll.
+        """
         for valid_word in sorted(self.valid_words, key=len, reverse=True):
             start_pos = Coord(7, 7 - len(valid_word) // 2)
             self.play_word(valid_word, start_pos)
@@ -95,6 +98,8 @@ class Solver:
             self.unplay_word(valid_word, start_pos)
             for letter in valid_word:
                 self.rack[letter] += 1
+
+        visualize.plot_board(self.board, list(self.rack.elements()))
 
     
     def dfs(self, gaddag_node: dict, cur_pos: Coord, cur_word: str, direction: int) -> bool:
@@ -192,10 +197,10 @@ class Solver:
         if config.EOW in gaddag_node:
             idx, word = gaddag_lib.get_word(cur_word)
             start_pos = cur_pos - HORIZONTAL * len(word)
+            self.play_word(word, start_pos)
             if self.verbose:
                 logging.info(f"Playing word {word} at position {start_pos}")
-            self.play_word(word, start_pos)
-            visualize.plot_board(self.board, list(self.rack.elements()))
+                visualize.plot_board(self.board, list(self.rack.elements()))
             for _ in range(2):
                 self.board = self.board.T
                 hooks = self.find_hooks()
