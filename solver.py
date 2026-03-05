@@ -91,6 +91,9 @@ class Coord:
 VERTICAL = Coord(1, 0)
 HORIZONTAL = Coord(0, 1)
 
+UPPER_CIRCLES = "ⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ"
+UPPER_FILLED = "🅐🅑🅒🅓🅔🅕🅖🅗🅘🅙🅚🅛🅜🅝🅞🅟🅠🅡🅢🅣🅤🅥🅦🅧🅨🅩"
+
 class Solver:
     """
     Object to solve a given Q-less roll.
@@ -101,7 +104,7 @@ class Solver:
         The resulting letters from a roll.
     verbose : bool
         Flag for whether or not to log the solving prcess.
-    visualize : bool
+    show_plays : bool
         Flag for whether to visualize the solving process.
 
     Attributes
@@ -123,7 +126,7 @@ class Solver:
     solve()
         Attempt to solve the given roll.
     """
-    def __init__(self, start_rack:list[str], verbose: bool = False, visualize : bool = False):
+    def __init__(self, start_rack:list[str], verbose: bool = False, show_plays : bool = False):
         self.start_rack = start_rack
         self.rack = Counter(start_rack)
         self.valid_words = utils.get_valid_words(start_rack, utils.load_words())
@@ -131,7 +134,7 @@ class Solver:
         self.board = self.make_empty_board()
         self.invalid_squares = set()
         self.verbose = verbose
-        self.visualize = visualize
+        self.show_plays = show_plays
 
     def make_empty_board(self) -> np.ndarray:
         """
@@ -221,27 +224,35 @@ class Solver:
 
         # Logging block
         if self.verbose:
-            logging.info(f"Calling dfs(self, \n\tgaddag_node={gaddag_node.keys()}, \n\tcur_pos={cur_pos}, \n\tcur_word={cur_word}, \n\tdirection={direction})")
+            logging.info('-' * 50)
+            logging.info(f"Calling dfs(\n\tgaddag_node={gaddag_node.keys()}, \n\tcur_pos={cur_pos}, \n\tcur_word={cur_word}, \n\tdirection={direction}\n)")
             board_str = "Board:\n"
             for i, row in enumerate(self.board):
                 for j, square in enumerate(row):
-                    if (i, j) == cur_pos.unpack():
-                        board_str += (square.lower() if square else '&') + ' '
+                    if (i, j) == cur_pos.unpack() or (i, j) in self.invalid_squares:
+                        if (i, j) == cur_pos.unpack() and (i, j) in self.invalid_squares:
+                            board_str += "🅮  "
+                        elif (i, j) == cur_pos.unpack():
+                            board_str += (UPPER_FILLED[ord(square) - 65] + ' ' if square else "█  ")
+                        else:
+                            board_str += "∅  "
                         continue
-                    if (i, j) in self.invalid_squares:
-                        board_str += "/ "
-                        continue
-                    board_str += (square if square else '#') + ' '
+                    board_str += (square if square else '◌') + "  "
                 board_str += '\n'
             logging.info(board_str)
-            rack_str = "Rack:\n"
-            for letter, count in self.rack.items():
-                rack_str += f"{letter}: {count}\n"
+            rack_str = "Rack: "
+            for letter in self.rack.elements():
+                rack_str += f"{letter.upper()} "
             logging.info(rack_str)
-            letter_str = "Letters committed:\n"
+            invalid_str = "Invalid squares: "
+            for square in self.invalid_squares:
+                invalid_str += f"{square} "
+            logging.info(invalid_str)
+            letter_str = "Current path: "
             for letter in cur_word:
-                if letter != config.BREAK:
-                    letter_str += letter + ' '
+                letter_str += letter.upper() + ' '
+            if not cur_word:
+                letter_str += "None"
             logging.info(letter_str)
             logging.info(f"Direction: {'>>' if direction == 1 else '<<'}")
 
@@ -254,16 +265,15 @@ class Solver:
         
         # Case 2: the current square on the board is already filled and must be used
         square_symbol = str(self.board[cur_pos.unpack()]).lower()
-        if self.verbose:
-            logging.info(f"Current square: {square_symbol}\n")
         if square_symbol:
             if square_symbol in gaddag_node:
                 if self.verbose:
-                    logging.info(f"Trying letter {square_symbol}")
+                    logging.info(f"Trying letter {square_symbol}.")
                     logging.info('-' * 50)
                 return self.dfs(gaddag_node[square_symbol], cur_pos + HORIZONTAL * direction, cur_word + square_symbol, direction)
             if self.verbose:
-                logging.info(f"Failed to use letter {square_symbol}")
+                logging.info(f"Failed to use letter {square_symbol}.")
+                logging.info('-' * 50)
             return False
         
         # Case 3: the current path in the GADDAG can be extended with a letter on the rack and the current position is legal to play in
@@ -271,24 +281,24 @@ class Solver:
             for letter in self.rack:
                 if letter in gaddag_node and self.rack[letter]:
                     if self.verbose:
-                        logging.info(f"Trying letter {letter}")
-                        logging.info('-' * 50)
+                        logging.info(f"Trying letter {letter}.")
                     self.rack[letter] -= 1
                     if self.dfs(gaddag_node[letter], cur_pos + HORIZONTAL * direction, cur_word + letter, direction):
+                        logging.info('-' * 50)
                         return True
                     if self.verbose:
-                        logging.info(f"Failed with letter {letter}")
+                        logging.info(f"Failed with letter {letter}.")
                     self.rack[letter] += 1
 
         # Case 4: it is possible to move from the prefix to the suffix
         if config.BREAK in gaddag_node:
             if self.verbose:
-                logging.info("Trying BREAK")
-                logging.info('-' * 50)
+                logging.info("Trying BREAK.")
             if self.dfs(gaddag_node[config.BREAK], cur_pos + HORIZONTAL * (len(cur_word) + 1), cur_word + config.BREAK, -direction):
+                logging.info('-' * 50)
                 return True
             if self.verbose:
-                logging.info("Failed to use BREAK")
+                logging.info("Failed to use BREAK.")
         
         # Case 5: The current GADDAG path can make a complete word which can be committed.
         if config.EOW in gaddag_node:
@@ -296,21 +306,23 @@ class Solver:
             start_pos = cur_pos - HORIZONTAL * len(word)
             self.play_word(word, start_pos)
             if self.verbose:
-                logging.info(f"Playing word {word} at position {start_pos}")
-            if self.visualize:
+                logging.info(f"Playing word {word} at position {start_pos}.")
+            if self.show_plays:
                 visualize.plot_board(self.board, list(self.rack.elements()))
             for _ in range(2):
                 self.board = self.board.T
                 hooks = self.find_hooks()
                 for hook in hooks:
                     if self.dfs(self.gaddag, hook, '', -1):
+                        logging.info('-' * 50)
                         return True
             if self.verbose:
-                logging.info(f"Unplaying word {word}")
+                logging.info(f"Unplaying word {word}.")
+                logging.info('-' * 50)
             self.unplay_word(word, start_pos, start_pos + idx * HORIZONTAL)
             self.find_hooks()
             return False
-        
+        logging.info('-' * 50)
         return False
 
 
