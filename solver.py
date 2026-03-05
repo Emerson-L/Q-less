@@ -92,7 +92,6 @@ VERTICAL = Coord(1, 0)
 HORIZONTAL = Coord(0, 1)
 
 UPPER_CIRCLES = "ⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ"
-UPPER_FILLED = "🅐🅑🅒🅓🅔🅕🅖🅗🅘🅙🅚🅛🅜🅝🅞🅟🅠🅡🅢🅣🅤🅥🅦🅧🅨🅩"
 
 class Solver:
     """
@@ -233,7 +232,7 @@ class Solver:
                         if (i, j) == cur_pos.unpack() and (i, j) in self.invalid_squares:
                             board_str += "🅮  "
                         elif (i, j) == cur_pos.unpack():
-                            board_str += (UPPER_FILLED[ord(square) - 65] + ' ' if square else "█  ")
+                            board_str += (UPPER_CIRCLES[ord(square) - 65] + ' ' if square else "█  ")
                         else:
                             board_str += "∅  "
                         continue
@@ -244,10 +243,6 @@ class Solver:
             for letter in self.rack.elements():
                 rack_str += f"{letter.upper()} "
             logging.info(rack_str)
-            invalid_str = "Invalid squares: "
-            for square in self.invalid_squares:
-                invalid_str += f"{square} "
-            logging.info(invalid_str)
             letter_str = "Current path: "
             for letter in cur_word:
                 letter_str += letter.upper() + ' '
