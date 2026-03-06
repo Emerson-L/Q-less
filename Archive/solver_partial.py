@@ -16,7 +16,7 @@ def first_two_words(letters:list[str]=None):
         dice = utils.load_dice(config.DICE_CSV_PATH)
         letters = utils.roll(dice)
 
-    words = utils.load_words()
+    words = utils.load_words(config.LEXICON_SOURCE)
     print(f'Letters: {letters}')
     print(f'Total words: {len(words)}')
 

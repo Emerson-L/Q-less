@@ -11,6 +11,10 @@ EOW = '*'
 BATCH_SIZE = 32
 NUM_EPOCHS = 10
 
+# LEXICON CHOICES
+LEXICON_SOURCE = 'nltk'              # Choose between 'twl' and 'nltk'
+LEXICON_CORPUS_NLTK = 'wordnet31'   # Choose between nltk options
+
 # FILE PATHS
 DICE_CSV_PATH = './assets/dice.csv'
 TRIE_PKL_PATH = './assets/trie.pkl'

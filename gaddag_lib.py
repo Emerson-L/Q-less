@@ -101,7 +101,7 @@ def test_gaddag():
     """
     Docstring
     """
-    words = utils.load_words()
+    words = utils.load_words(config.LEXICON_SOURCE)
     gaddag = get_gaddag(words)
     tree = Tree()
     tree.create_node(tag='Root', identifier='root')
@@ -117,7 +117,7 @@ def load_gaddag():
         with open(config.GADDAG_PKL_PATH, 'rb') as f:
             gaddag = pickle.load(f)
     else:
-        words = utils.load_words()
+        words = utils.load_words(config.LEXICON_SOURCE)
         gaddag = get_gaddag(words)
         with open(config.GADDAG_PKL_PATH, 'wb') as f:
             pickle.dump(gaddag, f)

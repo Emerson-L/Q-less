@@ -1,5 +1,6 @@
 import numpy as np
 import cv2 as cv
+from pathlib import Path
 
 import find_dice
 import modeling_torch
@@ -32,19 +33,24 @@ def predict_letters_from_dice_image(image_path:str, model_path:str):
 
 if __name__ == '__main__':
     true_dice = utils.load_dice(config.DICE_CSV_PATH)
-    
-    dice_image_path = './assets/dice_images/paper_background/IMG_3296.JPG'
-    dice_image = cv.imread(dice_image_path)
-    cv.imshow('Dice Image', dice_image)
 
-    pred_letters = predict_letters_from_dice_image(dice_image_path, config.BENCHMARK_MODEL_PATH)
-    pred_letters_lower = [char.lower() for char in pred_letters]
+    #TODO: Inefficient to load lexicon every time we solve, maybe just pass the lexicon to the class instantiation
 
-    print(f'Got roll: {pred_letters_lower}')
+    dice_image_dir = './assets/dice_images/paper_background/'
+    for dice_image_path in Path(dice_image_dir).glob('*.JPG'):
+        dice_image = cv.imread(dice_image_path)
+        cv.imshow('Dice Image', dice_image)
 
-    if not utils.is_possible_roll(pred_letters_lower, true_dice):
-        raise ValueError('Roll is not possible, machine learning bad')
+        pred_letters = predict_letters_from_dice_image(dice_image_path, config.BENCHMARK_MODEL_PATH)
+        pred_letters_lower = [char.lower() for char in pred_letters]
 
-    solver = Solver(pred_letters_lower, verbose=True)
-    solver.solve()
+        print(f'Got roll: {sorted(pred_letters_lower)}')
+
+        if not utils.is_possible_roll(pred_letters_lower, true_dice):
+            msg = 'Roll is not possible, machine learning bad'
+            print(msg)
+            #raise ValueError(msg)
+
+        solver = Solver(pred_letters_lower, verbose=True)
+        solver.solve()
 

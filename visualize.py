@@ -38,7 +38,7 @@ def plot_board(board:np.ndarray, letters:list[str], highlights:Optional[np.ndarr
 
     ax.text(
         0.5, -0.02,
-        '   '.join(l.upper() for l in letters),
+        '   '.join(letter.upper() for letter in sorted(letters)),
         transform=ax.transAxes,
         ha='center',
         va='top',
@@ -46,12 +46,10 @@ def plot_board(board:np.ndarray, letters:list[str], highlights:Optional[np.ndarr
         fontweight='bold'
     )
 
-    # Plot letters
     for i in range(width):
         for j in range(width):
             ax.text(j, i, board[i, j], ha='center', va='center', fontsize=12, fontweight='bold')
 
-    # Color the adjacents
     if highlights is not None:
         mask = np.zeros((config.BOARD_SIZE, config.BOARD_SIZE))
         mask[highlights[:, 0], highlights[:, 1]] = 1

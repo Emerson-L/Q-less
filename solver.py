@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
 from collections import Counter
-
 import numpy as np
 
 import gaddag_lib
@@ -128,7 +127,7 @@ class Solver:
     def __init__(self, start_rack:list[str], verbose: bool = False, show_plays : bool = False):
         self.start_rack = start_rack
         self.rack = Counter(start_rack)
-        self.valid_words = utils.get_valid_words(start_rack, utils.load_words())
+        self.valid_words = utils.get_valid_words(start_rack, utils.load_words(config.LEXICON_SOURCE))
         self.gaddag = gaddag_lib.load_gaddag()
         self.board = self.make_empty_board()
         self.invalid_squares = set()

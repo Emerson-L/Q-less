@@ -122,7 +122,7 @@ def generate_letter_images(dice_images_path:str, letter_images_dir:str=None) -> 
         Path to a single .JPG image or directory of .JPG images
 
     letter_images_dir : str
-        path to a directory to put. Will be made and images written into it if provided.
+        path to a directory to put images in. Will be made and images written into it if provided.
 
     Returns
     -------

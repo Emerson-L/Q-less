@@ -3,6 +3,8 @@ import random
 from collections import Counter
 import csv
 from assets import twl
+import nltk
+import importlib
 
 import config
 import visualize
@@ -37,16 +39,65 @@ def is_qless_word(word: str) -> bool:
     ]
     return all(conditions)
 
-def load_words() -> list[str]:
+def load_words(source:str, nltk_corpus_name:str=config.LEXICON_CORPUS_NLTK) -> list[str]:
     """
-    Loads nltk words that are valid for Q-less
+    Wrapper for loading words from different sources
+
+    Parameters
+    ----------
+    source : str
+        place to load words from either twl or nltk
+    nltk_corpus : str
+        id of the nltk corpus to load if source = nltk
+    
+    Returns
+    -------
+    list of str
+        All words in the specified dataset that are valid Q-less words
+    """
+    match source:
+        case 'twl':
+            return load_twl_words()
+        case 'nltk':
+            return load_nltk_words(corpus_name=nltk_corpus_name)
+
+
+def load_twl_words() -> list[str]:
+    """
+    Loads twl words that are valid for Q-less
 
     Returns
     -------
     list of str
-        All words in the nltk dataset
+        All words in the twl dataset that are valid Q-less words
     """
     return [w for w in twl.iterator() if is_qless_word(w)]
+
+def load_nltk_words(corpus_name:str) -> list[str]:
+    """
+    Loads nltk words that are valid for Q-less
+
+    Parameters
+    ----------
+    corpus : str
+        The nltk corpus to download.
+
+    Returns
+    -------
+    list of str
+        All words in the ntlk dataset that are valid Q-less words
+    """
+    if 'wordnet' in corpus_name:
+        nltk.download('wordnet', quiet=True)
+
+    try:
+        corpus_module = importlib.import_module('nltk.corpus')
+        corpus = getattr(corpus_module, corpus_name)
+    except (ImportError, AttributeError) as e:
+        raise ImportError(f'Could not find or load nltk corpus: {corpus_name}') from e
+
+    return [w.lower() for w in corpus.words() if is_qless_word(w)]
+
 
 def load_dice(dice_csv_path:str) -> list[list[str]]:
     """
@@ -225,5 +276,5 @@ def find_all_possible_12_letter_words():
     Find all the possible 12 letter words.
     """
     dice = load_dice(config.DICE_CSV_PATH)
-    long_words = [word for word in load_words() if len(word) == 12 and is_possible_roll(list(word), dice)]
+    long_words = [word for word in load_words(config.LEXICON_SOURCE) if len(word) == 12 and is_possible_roll(list(word), dice)]
     print(long_words)

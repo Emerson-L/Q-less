@@ -41,7 +41,7 @@ def check_word(word:str, trie:dict) -> bool:
 
 
 def test_trie():
-    words = utils.load_words()
+    words = utils.load_words(config.LEXICON_SOURCE)
     if Path(config.TRIE_PKL_PATH).exists():
         with open(config.TRIE_PKL_PATH, 'rb') as f:
             trie = pickle.load(f)
