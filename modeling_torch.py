@@ -32,11 +32,17 @@ class Net(torch.nn.Module):
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
+        #print(x.shape)
         x = self.pool(F.relu(self.conv2(x)))
+        #print(x.shape)
         x = torch.flatten(x, 1)
+        #print(x.shape)
         x = F.relu(self.fc1(x))
+        #print(x.shape)
         x = F.relu(self.fc2(x))
+        #print(x.shape)
         x = self.fc3(x)
+        #print(x.shape)
         return x
     
 def train(trainloader:DataLoader, model_path:str) -> np.ndarray:
