@@ -58,27 +58,32 @@ class Conv(Layer):
         self.stride = stride
         self.padding = padding
 
-        n_inputs = input_channels * size * size
-        self.filters = [rng.normal(loc=0, scale=2/n_inputs, size=(self.size, self.size)) for _ in range(num_filters)]
+        init_st_dev = np.sqrt(2 / (input_channels * size * size)) # Kaiming He initialization initializes filters randomly with std root (2 / num_inputs)
+        self.filters = [rng.normal(loc=0, scale=init_st_dev, size=(self.size, self.size)) for _ in range(num_filters)]
 
         self.outdim_x = None
         self.outdim_y = None
 
     def forward(self, x:np.ndarray):
-        print('Filter 1')
-        print(self.filters[0])
-        print('\n')
+        # print('Filter 1')
+        # print(self.filters[0])
+        # print('\n')
         assert x.shape[0] == self.input_channels
 
         x = np.pad(x, ((0, 0), (self.padding, self.padding), (self.padding, self.padding)))
 
         self.outdim_x = int(((x[0].shape[0] - self.size) / self.stride) + 1)
         self.outdim_y = int(((x[0].shape[1] - self.size) / self.stride) + 1)
-        output = np.zeros((self.input_channels * self.num_filters, self.outdim_x, self.outdim_y))
-        for channel in range(self.input_channels):
-            image = x[channel]
-            for idx, filter in enumerate(self.filters):
-                output[(channel*self.num_filters)+idx] = self.convolve(image, filter)
+        output = np.zeros((self.num_filters, self.outdim_x, self.outdim_y))
+        # for channel in range(self.input_channels):
+        #     image = x[channel]
+        #     for filter_idx, filter in enumerate(self.filters):
+        #         output[(channel*self.num_filters)+filter_idx] = self.convolve(image, filter)
+        for filter_idx, filter in enumerate(self.filters):
+            for channel in range(self.input_channels):
+                image = x[channel]
+                output[filter_idx] += self.convolve(image, filter)
+
         return output
     
     def convolve(self, image:np.ndarray, filter:np.ndarray):
@@ -99,16 +104,19 @@ class MaxPool(Layer):
         self.size = size
 
     def forward(self, x:np.ndarray):
-        width = x.shape[0]
-        height = x.shape[1]
+        channels = x.shape[0]
+        width = x.shape[1]
+        height = x.shape[2]
 
         assert not (width % self.size or height % self.size)
-        output = np.empty((width//self.size, height//self.size))
+        output = np.empty((channels, width//self.size, height//self.size))
         
-        for i in range(width//self.size):
-            for j in range(height//self.size):
-                output[i][j] = np.max(x[i*self.size : (i+1)*self.size, 
-                                        j*self.size : (j+1)*self.size])
+        for channel in range(channels):
+            image = x[channel]
+            for i in range(width//self.size):
+                for j in range(height//self.size):
+                    output[channel, i, j] = np.max(image[i*self.size : (i+1)*self.size, 
+                                                         j*self.size : (j+1)*self.size])
         return output
 
     def backward(self, x:np.ndarray):
@@ -160,12 +168,17 @@ class Net():
         self.layers = layers
 
     def forward_pass(self, x:np.ndarray):
-        pass
+        for layer in self.layers:
+            x = layer.forward(x)
+            print(layer)
+            print(x)
+            print(x.shape)
+            print('\n')
 
     def backward_pass(self, x:np.ndarray):
         pass
 
-    def train(self, x:np.ndarray):
+    def train(self, x:np.ndarray, y:np.ndarray):
         pass
 
 if __name__ == '__main__':
@@ -188,18 +201,20 @@ if __name__ == '__main__':
     net = Net(layers)
 
     rng = np.random.default_rng(111) 
-    test_arr_size = 6
+    test_arr_size = 28
     test_arr = np.round(rng.random(size=(test_arr_size, test_arr_size)), decimals=2)
     test_arr = test_arr - 0.75
 
     test_arr = np.reshape(test_arr, (1, test_arr_size, test_arr_size))
 
-    test_arr = np.concatenate((test_arr, test_arr * 1.5), axis=0)
+    # Include for 2 channel input
+    # test_arr = np.concatenate((test_arr, test_arr * 1.5), axis=0)
     
-    print('Input array')
-    print(test_arr)
-    print('\n')
+    # print('Input array')
+    # print(test_arr)
+    # print('\n')
 
+    # print('Testing maxpool and relu')
     # pool = MaxPool(2)
     # pooled = pool.forward(test_arr)
     # print(pooled)
@@ -210,23 +225,25 @@ if __name__ == '__main__':
     # print(relued)
     # print('\n')
 
-    print('Testing convolution')
-    conv = Conv(input_channels=2, num_filters=2, size=3, stride=1, padding=0)
-    conv_arr = conv.forward(test_arr)
-    print('Convolved array')
-    print(conv_arr)
-    print(conv_arr.shape)
-    print('\n')
+    # print('Testing convolution')
+    # conv = Conv(input_channels=2, num_filters=2, size=3, stride=1, padding=0)
+    # conv_arr = conv.forward(test_arr)
+    # print('Convolved array')
+    # print(conv_arr)
+    # print(conv_arr.shape)
+    # print('\n')
 
+    # print('Testing softmax')
+    # softmaxed = SoftMax().forward(np.array([1, 2, 3, 4]))
+    # print(softmaxed)
+    # print(np.sum(softmaxed))
 
-    print('Testing softmax')
-    softmaxed = SoftMax().forward(np.array([1, 2, 3, 4]))
-    print(softmaxed)
-    print(np.sum(softmaxed))
+    # print('Testing flatten')
+    # flattened = Flatten().forward(test_arr)
+    # print(flattened)
 
-    print('Testing flatten')
-    flattened = Flatten().forward(test_arr)
-    print(flattened)
+    print('Testing full forwarding')
+    net.forward_pass(test_arr)
 
 
 
