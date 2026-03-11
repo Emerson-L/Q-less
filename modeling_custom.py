@@ -39,8 +39,8 @@ class Layer:
 
 class Linear(Layer):
     def __init__(self, input_size: int, output_size :int):
-        self.weights = np.random.randn(input_size)
-        self.bias = np.random.rand()
+        self.weights = np.random.randn(input_size, output_size)
+        self.biases = np.random.randn(input_size)
 
     def forward(self, input: np.ndarray) -> np.ndarray:
         self.activations = input @ self.weights + self.bias
