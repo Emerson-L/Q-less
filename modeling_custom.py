@@ -38,6 +38,9 @@ class Layer:
         pass
 
 class Linear(Layer):
+    """
+    Linear, fully connected layer
+    """
     def __init__(self, input_size: int, output_size :int):
         self.weights = np.random.randn(input_size, output_size)
         self.biases = np.random.randn(output_size)
@@ -50,6 +53,9 @@ class Linear(Layer):
         pass 
 
 class Conv(Layer):
+    """
+    Convolutional layer
+    """
     def __init__(self, input_channels:int, num_filters:int, size:int, stride:int=1, padding:int=0):
         rng = np.random.default_rng(1) 
         self.input_channels = input_channels
@@ -58,7 +64,7 @@ class Conv(Layer):
         self.stride = stride
         self.padding = padding
 
-        init_st_dev = np.sqrt(2 / (input_channels * size * size)) # Kaiming He initialization initializes filters randomly with std root (2 / num_inputs)
+        init_st_dev = np.sqrt(2 / (input_channels * size * size)) # Kaiming He initialization: we initialize filters randomly with std root (2 / num_inputs)
         self.filters = [rng.normal(loc=0, scale=init_st_dev, size=(self.size, self.size)) for _ in range(num_filters)]
 
         self.outdim_x = None
@@ -93,6 +99,9 @@ class Conv(Layer):
         # Update filter weights
 
 class MaxPool(Layer):
+    """
+    Max pool layer
+    """
     def __init__(self, size:int):
         self.size = size
 
@@ -116,6 +125,9 @@ class MaxPool(Layer):
         pass
 
 class ReLU(Layer):
+    """
+    ReLU layer
+    """
     def __init__(self):
         pass
 
@@ -126,6 +138,9 @@ class ReLU(Layer):
         pass
 
 class Flatten(Layer):
+    """
+    Flatten layer
+    """
     def __init__(self):
         pass
 
@@ -136,6 +151,9 @@ class Flatten(Layer):
         pass   
 
 class SoftMax(Layer):
+    """
+    Softmax layer
+    """
     def __init__(self):
         pass
 
@@ -147,6 +165,9 @@ class SoftMax(Layer):
         pass
 
 def CrossEntropyLoss():
+    """
+    Cross entropy loss
+    """
     y = None # 2d array of 1 if correct prediction for each class, Shape (batch_size, num_classes)
     p = None # 2d array of probabilities for the correct prediction, Shape (batch_size, num_classes)
     
