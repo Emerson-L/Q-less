@@ -10,3 +10,4 @@ model*.pth
 /assets/chars74k_English/
 
 *.log
+combos.json
