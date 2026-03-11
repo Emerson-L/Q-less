@@ -40,13 +40,13 @@ class Layer:
 class Linear(Layer):
     def __init__(self, input_size: int, output_size :int):
         self.weights = np.random.randn(input_size, output_size)
-        self.biases = np.random.randn(input_size)
+        self.biases = np.random.randn(output_size)
 
-    def forward(self, input: np.ndarray) -> np.ndarray:
-        self.activations = input @ self.weights + self.bias
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        self.activations = x @ self.weights + self.biases
         return self.activations
     
-    def backward(self, loss: np.ndarray, input: np.ndarray) -> np.ndarray:
+    def backward(self, loss: np.ndarray, x: np.ndarray) -> np.ndarray:
         pass 
 
 class Conv(Layer):
@@ -65,20 +65,13 @@ class Conv(Layer):
         self.outdim_y = None
 
     def forward(self, x:np.ndarray):
-        # print('Filter 1')
-        # print(self.filters[0])
-        # print('\n')
         assert x.shape[0] == self.input_channels
 
         x = np.pad(x, ((0, 0), (self.padding, self.padding), (self.padding, self.padding)))
-
         self.outdim_x = int(((x[0].shape[0] - self.size) / self.stride) + 1)
         self.outdim_y = int(((x[0].shape[1] - self.size) / self.stride) + 1)
+
         output = np.zeros((self.num_filters, self.outdim_x, self.outdim_y))
-        # for channel in range(self.input_channels):
-        #     image = x[channel]
-        #     for filter_idx, filter in enumerate(self.filters):
-        #         output[(channel*self.num_filters)+filter_idx] = self.convolve(image, filter)
         for filter_idx, filter in enumerate(self.filters):
             for channel in range(self.input_channels):
                 image = x[channel]
@@ -137,7 +130,7 @@ class Flatten(Layer):
         pass
 
     def forward(self, x:np.ndarray):
-        return x.reshape(x.shape[0], -1)
+        return x.reshape(-1)
 
     def backward(self, x:np.ndarray):
         pass   

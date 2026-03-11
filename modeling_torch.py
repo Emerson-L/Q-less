@@ -45,6 +45,14 @@ class Net(torch.nn.Module):
         #print(x.shape)
         return x
     
+        # With current setup this prints:
+        # torch.Size([32, 2, 12, 12])
+        # torch.Size([32, 16, 4, 4])
+        # torch.Size([32, 256])
+        # torch.Size([32, 120])
+        # torch.Size([32, 84])
+        # torch.Size([32, 26])
+    
 def train(trainloader:DataLoader, model_path:str) -> np.ndarray:
     """
     Trains and saves model. Derived from pytorch CNN tutorial
