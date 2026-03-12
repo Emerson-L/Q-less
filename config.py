@@ -1,7 +1,7 @@
 
 # CONSTANTS
 NUM_DICE = 12
-BOARD_SIZE = 15 # Assumes square board
+BOARD_SIZE = 17 # Assumes square board
 
 # GADDAG CONSTANTS
 BREAK = '>'

@@ -4,8 +4,6 @@ Q-less solver by Indy and Emerson
 **TODO**
 - find_dice.py: Convert everything possible that uses skimage to use opencv (i.e. transform, but probably not measure)
 - Make UI that shows the dice image and the predictions for each dice right next to each die so that user can verify themselves if all of the letters are right?
-- Make modeling not include Q
-- 
 
 **Ideas For Improvement**
 - Somehow rotate our letters before predicting on them
@@ -192,3 +190,7 @@ walkingstick
 watchmakings
 weightlessly
 xanthophylls
+
+**Some stats**
+Number of unique roll outcomes: 15800439          
+Total possible combinations calculated: 2176782336

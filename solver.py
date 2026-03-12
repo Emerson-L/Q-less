@@ -124,15 +124,11 @@ class Solver:
     solve()
         Attempt to solve the given roll.
     """
-    def __init__(self, start_rack:list[str], verbose: bool = False, show_plays : bool = False):
-        self.start_rack = start_rack
-        self.rack = Counter(start_rack)
-        self.valid_words = utils.get_valid_words(start_rack, utils.load_words(config.LEXICON_SOURCE))
+    def __init__(self, verbose: bool = False, show_plays : bool = False, show_final_board: bool = False):
         self.gaddag = gaddag_lib.load_gaddag()
-        self.board = self.make_empty_board()
-        self.invalid_squares = set()
         self.verbose = verbose
         self.show_plays = show_plays
+        self.show_final_board = show_final_board
 
     def make_empty_board(self) -> np.ndarray:
         """
@@ -178,12 +174,29 @@ class Solver:
                 continue
             self.board[cur_pos.unpack()] = ''
 
-    def solve(self) -> None:
+    def solve(self, start_rack: list[str]) -> bool:
         """
         Attempt to solve the Q-less game for a given roll.
+
+        Parameters
+        ----------
+        start_rack : list of str
+            The roll to solve.
+
+        Returns
+        -------
+        True if the roll is possible to solve, and False otherwise.
         """
+
+        self.start_rack = start_rack
+        self.rack = Counter(start_rack)
+        self.valid_words = utils.get_valid_words(start_rack, utils.load_words(config.LEXICON_SOURCE))
+
+        self.board = self.make_empty_board()
+        self.invalid_squares = set()
+
         for valid_word in sorted(self.valid_words, key=len, reverse=True):
-            start_pos = Coord(7, 7 - len(valid_word) // 2)
+            start_pos = Coord(config.BOARD_SIZE//2, config.BOARD_SIZE//2 - len(valid_word) // 2)
             self.play_word(valid_word, start_pos)
             for letter in valid_word:
                 self.rack[letter] -= 1
@@ -191,12 +204,14 @@ class Solver:
             hooks = self.find_hooks()
             for hook in hooks:
                 if self.dfs(self.gaddag, hook, '', -1):
-                    visualize.plot_board(self.board, self.start_rack)
-                    return
+                    if self.show_final_board:
+                        visualize.plot_board(self.board, self.start_rack)
+                    return True
             self.board = self.board.T
             self.unplay_word(valid_word, start_pos)
             for letter in valid_word:
                 self.rack[letter] += 1
+        return False
 
     
     def dfs(self, gaddag_node: dict, cur_pos: Coord, cur_word: str, direction: int) -> bool:
@@ -436,5 +451,5 @@ class Solver:
 if __name__ == '__main__':
     dice = utils.load_dice(config.DICE_CSV_PATH)
     letters = utils.roll(dice)
-    solver = Solver(letters, verbose=True)
-    solver.solve()
+    solver = Solver(show_final_board=True)
+    solver.solve(letters)
