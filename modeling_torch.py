@@ -28,7 +28,7 @@ class Net(torch.nn.Module):
         self.conv2 = torch.nn.Conv2d(2, 16, 5)
         self.fc1 = torch.nn.Linear(256, 120)
         self.fc2 = torch.nn.Linear(120, 84)
-        self.fc3 = torch.nn.Linear(84, 26)
+        self.fc3 = torch.nn.Linear(84, 25)
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
@@ -130,9 +130,11 @@ def load_and_test(testloader:DataLoader, model_path:str, plot_wrong_predictions:
             if plot_wrong_predictions:
                 for i, (image, pred, label) in enumerate(zip(images, predicted, labels)):
                     if pred != label:
+                        pred = wrangle.remap_preds(pred)
                         letter = utils.numbers_to_letters([pred])[0]
                         visualize.plot_image(image[0], letter=letter)
-                        visualize.plot_probs(utils.numbers_to_letters(range(26)), softmaxed_outputs[i])
+                        predictable_letters_list = utils.numbers_to_letters(list(range(16)) + list(range(17, 26)))
+                        visualize.plot_probs(predictable_letters_list, softmaxed_outputs[i])
 
     accuracy = 100 * correct / total
     return accuracy
@@ -191,7 +193,8 @@ def eval_labeled_qless_test_data(model_path:str, plot_wrong_predictions:bool=Fal
     Qless_accuracies = []
     for dir in test_images_dirs:
         if Path(f'{dir}/labels.txt').exists():
-            Qless_testloader = wrangle.load_qless_test_data(dir)
+            images, labels = wrangle.load_qless_test_data(dir)
+            Qless_testloader = wrangle.make_qless_testloader(images, labels)
             Qless_accuracy = load_and_test(Qless_testloader, model_path, plot_wrong_predictions=plot_wrong_predictions)
             print(f'Accuracy on {Path(dir).stem}: {Qless_accuracy:.2f}%')
             Qless_accuracies.append(Qless_accuracy)
@@ -203,32 +206,32 @@ if __name__ == '__main__':
 
     n_augments_rotation = 3
 
-    # Train and test EMNIST
+    # Use EMNIST
     #x_train, y_train, x_test, y_test = wrangle.load_emnist_data(config.EMNIST_DATASET_NAME, n_augments_rotation=n_augments_rotation)
     
-    # Train and test chars74k
+    # Use chars74k
     #x_train, y_train, x_test, y_test = wrangle.load_chars74k_data(n_augments_rotation=n_augments_rotation)
 
     # Use a combination of the two datasets instead
-    x_train_emnist, y_train_emnist, x_test_emnist, y_test_emnist = wrangle.load_emnist_data(config.EMNIST_DATASET_NAME, n_augments_rotation=n_augments_rotation)
-    x_train_chars, y_train_chars, x_test_chars, y_test_chars = wrangle.load_chars74k_data(n_augments_rotation=n_augments_rotation)
-    x_train = torch.cat((x_train_emnist, x_train_chars))
-    y_train = torch.cat((y_train_emnist, y_train_chars))
-    x_test = torch.cat((x_test_emnist, x_test_chars))
-    y_test = torch.cat((y_test_emnist, y_test_chars))
+    # x_train_emnist, y_train_emnist, x_test_emnist, y_test_emnist = wrangle.load_emnist_data(config.EMNIST_DATASET_NAME, n_augments_rotation=n_augments_rotation)
+    # x_train_chars, y_train_chars, x_test_chars, y_test_chars = wrangle.load_chars74k_data(n_augments_rotation=n_augments_rotation)
+    # x_train = torch.cat((x_train_emnist, x_train_chars))
+    # y_train = torch.cat((y_train_emnist, y_train_chars))
+    # x_test = torch.cat((x_test_emnist, x_test_chars))
+    # y_test = torch.cat((y_test_emnist, y_test_chars))
 
-    print(f'x_train shape: {x_train.shape}')
-    print(f'y_train shape: {y_train.shape}')
-    print(f'x_test shape: {x_test.shape}')
-    print(f'y_test shape: {y_test.shape}')
+    # print(f'x_train shape: {x_train.shape}')
+    # print(f'y_train shape: {y_train.shape}')
+    # print(f'x_test shape: {x_test.shape}')
+    # print(f'y_test shape: {y_test.shape}')
 
-    trainloader, testloader = wrangle.make_dataloaders(x_train, y_train, x_test, y_test)
+    # trainloader, testloader = wrangle.make_dataloaders(x_train, y_train, x_test, y_test)
 
-    losses = train(trainloader, config.MODEL_PATH)
-    visualize.plot_loss_curve(losses)
+    # losses = train(trainloader, config.MODEL_PATH)
+    # visualize.plot_loss_curve(losses)
 
-    accuracy = load_and_test(testloader, config.MODEL_PATH)
-    print(f'Accuracy on test set: {accuracy:.2f}%')
+    # accuracy = load_and_test(testloader, config.MODEL_PATH)
+    # print(f'Accuracy on test set: {accuracy:.2f}%')
 
-    #eval_labeled_qless_test_data('./model_combined_10_aug_3random.pth')
+    eval_labeled_qless_test_data('./model_combined_10_aug3r_noQ.pth', plot_wrong_predictions=False)
 

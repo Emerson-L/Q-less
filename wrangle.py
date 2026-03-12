@@ -33,18 +33,27 @@ def load_emnist_data(dataset_name:str, n_augments_rotation:int=0) -> tuple[DataL
     train_images, train_labels = extract_training_samples(dataset_name)
     test_images, test_labels = extract_test_samples(dataset_name)
 
-
     match dataset_name:
         case 'letters':
             train_labels = train_labels - 1
             test_labels = test_labels - 1
         case 'byclass':
             train_mask = (train_labels >= 10) & (train_labels <= 35)
+            test_mask = (test_labels >= 10) & (test_labels <= 35)
             train_images = train_images[train_mask]
             train_labels = train_labels[train_mask] - 10
-            test_mask = (test_labels >= 10) & (test_labels <= 35)
             test_images = test_images[test_mask]
             test_labels = test_labels[test_mask] - 10
+
+    train_mask_q = train_labels != utils.letters_to_numbers(['Q'])
+    test_mask_q = test_labels != utils.letters_to_numbers(['Q'])
+    train_images = train_images[train_mask_q]
+    train_labels = train_labels[train_mask_q]
+    test_images = test_images[test_mask_q]
+    test_labels = test_labels[test_mask_q]
+
+    train_labels = remap_labels(train_labels)
+    test_labels = remap_labels(test_labels)
 
     def augment_set(images, labels):
         augs = []
@@ -94,7 +103,7 @@ def load_chars74k_data(n_augments_rotation:int=0) -> tuple[DataLoader, DataLoade
     for character_dir in [p for p in Path(config.CHARS_74K_ENGLISH_PATH).glob('*') if p.is_dir()]:
         sample_num = int(character_dir.stem[-3:])
         character = utils.chars74k_sample_nums_to_characters([sample_num])[0]
-        if character.isupper():
+        if character.isupper() and character != 'Q':
             for image_path in Path(character_dir).glob('*.png'):
                 image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
                 resized = cv.resize(image, (28, 28), interpolation=cv.INTER_AREA)
@@ -112,8 +121,9 @@ def load_chars74k_data(n_augments_rotation:int=0) -> tuple[DataLoader, DataLoade
         
     images = np.array(images)
     labels = np.array(labels)
+    labels = remap_labels(labels)
 
-    x_train, x_test, y_train, y_test = train_test_split(images, labels, test_size=0.15, random_state=42)
+    x_train, x_test, y_train, y_test = train_test_split(images, labels, test_size=0.165, random_state=42)
     x_train, x_test, y_train, y_test = torch.tensor(x_train), torch.tensor(x_test), torch.tensor(y_train), torch.tensor(y_test)
 
     return x_train, y_train, x_test, y_test
@@ -147,7 +157,7 @@ def make_dataloaders(x_train:np.ndarray, y_train:np.ndarray, x_test:np.ndarray, 
 
 def load_qless_test_data(test_images_dir:str) -> DataLoader:
     """
-    Load Qless test data from a directory of 12 letter images and a labels.txt into a torch DataLoader
+    Load Qless test data from a directory of 12 letter images and a labels.txt into images and labels
 
     Parameters
     ----------
@@ -156,8 +166,10 @@ def load_qless_test_data(test_images_dir:str) -> DataLoader:
 
     Returns
     -------
-    testloader : torch DataLoader
-        DataLoader with test dataset
+    images : np.ndarray
+        array of images
+    labels : np.ndarray
+        array of labels
     """
     images = np.zeros((config.NUM_DICE, 28, 28), dtype=np.uint8)
     for image_path in Path(test_images_dir).glob('*.png'):
@@ -168,7 +180,25 @@ def load_qless_test_data(test_images_dir:str) -> DataLoader:
     with open(f'{test_images_dir}/labels.txt', 'r') as f:
         content = f.read()
         labels = utils.letters_to_numbers(content)
+        labels = remap_labels(np.array(labels))
 
+    return images, labels
+
+def make_qless_testloader(images:np.ndarray, labels) -> DataLoader:
+    """
+    Makes a Torch DataLoader from images and labels arrays
+
+    Parameters
+    ----------
+    images : np.ndarray
+        array of images
+    labels : np.ndarray
+        array of labels
+
+    Returns
+    loader : DataLoader
+        dataloader of test data
+    """
     x = torch.tensor(images).unsqueeze(1).float()
     y = torch.tensor(labels).long()
 
@@ -205,3 +235,35 @@ def augment_rotate(image:np.ndarray, n_augs:int):
         augmented.append(cv.warpAffine(image, rotation_matrix, (w, h)))
 
     return augmented
+
+def remap_labels(labels:np.ndarray) -> np.ndarray:
+    """
+    Remaps labels after removing Q so that we don't skip 16 (Q)
+    
+    Parameters
+    ----------
+    labels : np.ndarray
+        array of labels that doesn't include 16
+    
+    Returns
+    -------
+    labels : np.ndarray
+        remapped labels without a gap at 16
+    """
+    return np.where(labels > 16, labels - 1, labels)
+
+def remap_preds(preds:np.ndarray) -> np.ndarray:
+    """
+    Opposite of remap_labels, remaps labels after predicting without Q so that we have indices that match the alphabet
+
+    Parameters
+    ----------
+    preds : np.ndarray
+        array of integer predictions includes 16
+    
+    Returns
+    -------
+    preds : np.ndarray
+        remapped predictions with a gap at 16
+    """
+    return np.where(preds >= 16, preds + 1, preds)

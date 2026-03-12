@@ -1,4 +1,5 @@
 import numpy as np
+import wrangle
 
 
 class Layer:
@@ -34,8 +35,8 @@ class Layer:
         """
         pass
 
-    def backward(self, x:np.ndarray) -> None:
-        pass
+    def backward(self, grad: np.ndarray) -> None:
+        pass 
 
 class Linear(Layer):
     """
@@ -49,7 +50,7 @@ class Linear(Layer):
         self.activations = x @ self.weights + self.biases
         return self.activations
     
-    def backward(self, loss: np.ndarray, x: np.ndarray) -> np.ndarray:
+    def backward(self, grad: np.ndarray) -> np.ndarray:
         pass 
 
 class Conv(Layer):
@@ -94,8 +95,8 @@ class Conv(Layer):
                 convolved[i][j] = np.sum(image_part * filter)
         return convolved
 
-    def backward(self, x:np.ndarray):
-        pass
+    def backward(self, grad: np.ndarray) -> np.ndarray:
+        pass 
         # Update filter weights
 
 class MaxPool(Layer):
@@ -121,21 +122,22 @@ class MaxPool(Layer):
                                                          j*self.size : (j+1)*self.size])
         return output
 
-    def backward(self, x:np.ndarray):
-        pass
+    def backward(self, grad: np.ndarray) -> np.ndarray:
+        pass 
 
 class ReLU(Layer):
     """
     ReLU layer
     """
     def __init__(self):
-        pass
+        self.output = None
 
     def forward(self, x:np.ndarray):
-        return np.clip(x, a_min=0, a_max=None)
+        self.output = np.clip(x, a_min=0, a_max=None)
+        return self.output
 
-    def backward(self, x:np.ndarray):
-        pass
+    def backward(self, grad: np.ndarray) -> np.ndarray:
+        return np.where(self.output, grad, 0)
 
 class Flatten(Layer):
     """
@@ -147,8 +149,8 @@ class Flatten(Layer):
     def forward(self, x:np.ndarray):
         return x.reshape(-1)
 
-    def backward(self, x:np.ndarray):
-        pass   
+    def backward(self, grad: np.ndarray) -> np.ndarray:
+        pass 
 
 class SoftMax(Layer):
     """
@@ -161,18 +163,24 @@ class SoftMax(Layer):
         exp = np.exp(x)
         return exp / np.sum(exp)
 
-    def backward(self, x:np.ndarray):
+    def backward(self, grad: np.ndarray) -> np.ndarray:
         pass
 
 def CrossEntropyLoss():
     """
     Cross entropy loss
+
+    Parameters
+    ----------
+
+    Returns
+    -------
     """
-    y = None # 2d array of 1 if correct prediction for each class, Shape (batch_size, num_classes)
+    y = None # 2d array of 1 if correct prediction for each class, 0 otherwise, Shape (batch_size, num_classes)
     p = None # 2d array of probabilities for the correct prediction, Shape (batch_size, num_classes)
     
     p = np.clip(p, a_min=0.0000001, a_max=None)
-    return np.sum(np.multiply(y, np.log(p))) / y.shape[0]
+    return -1 * np.sum(np.multiply(y, np.log(p))) / y.shape[0]
 
 class Net():
     """
@@ -185,17 +193,23 @@ class Net():
         for layer in self.layers:
             x = layer.forward(x)
             print(layer)
-            print(x)
+            # print(x)
             print(x.shape)
-            print('\n')
+            #print('\n')
+        return x
 
-    def backward_pass(self, x:np.ndarray):
-        pass
+    def backward_pass(self, grad:np.ndarray):
+        for layer in self.layers:
+            grad = layer.backward(grad)
+            print(layer)
+            # print(grad)
+            print(grad.shape)
+            #print('\n')
 
     def train(self, x:np.ndarray, y:np.ndarray):
         pass
 
-if __name__ == '__main__':
+def build_model():
     layers = [
         Conv(1, 2, 5),
         ReLU(),
@@ -208,18 +222,35 @@ if __name__ == '__main__':
         ReLU(),
         Linear(120, 84),
         ReLU(),
-        Linear(84, 26),
+        Linear(84, 25),
         SoftMax(),
     ]
-    
-    net = Net(layers)
 
+    return Net(layers)
+
+
+def make_test_arr():
     rng = np.random.default_rng(111) 
     test_arr_size = 28
     test_arr = np.round(rng.random(size=(test_arr_size, test_arr_size)), decimals=2)
     test_arr = test_arr - 0.75
+    return np.reshape(test_arr, (1, test_arr_size, test_arr_size))
 
-    test_arr = np.reshape(test_arr, (1, test_arr_size, test_arr_size))
+if __name__ == '__main__':
+    net = build_model()
+    
+    test_layers = [
+        Flatten(),
+        Linear(784, 120),
+        ReLU(),
+        Linear(120, 25),
+        SoftMax(),
+    ]
+    test_net = Net(test_layers)
+
+    test_arr = make_test_arr()
+
+    images, labels = wrangle.load_qless_test_data('./assets/letter_images/IMG_3296')
 
     # Include for 2 channel input
     # test_arr = np.concatenate((test_arr, test_arr * 1.5), axis=0)
@@ -257,7 +288,9 @@ if __name__ == '__main__':
     # print(flattened)
 
     print('Testing full forwarding')
-    net.forward_pass(test_arr)
+    for image in images:
+        test_net.forward_pass(image)
+        #test_net.backward_pass()
 
 
 
