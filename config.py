@@ -1,7 +1,7 @@
 
 # CONSTANTS
 NUM_DICE = 12
-BOARD_SIZE = 15 # Assumes square board
+BOARD_SIZE = 17 # Assumes square board
 
 # GADDAG CONSTANTS
 BREAK = '>'
@@ -17,6 +17,7 @@ LEXICON_CORPUS_NLTK = 'wordnet31'   # Choose between nltk options
 
 # FILE PATHS
 DICE_CSV_PATH = './assets/dice.csv'
+COMBOS_JSON_PATH = './assets/combos.json'
 TRIE_PKL_PATH = './assets/trie.pkl'
 GADDAG_PKL_PATH = './assets/gaddag.pkl'
 
