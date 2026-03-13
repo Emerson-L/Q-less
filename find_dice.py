@@ -29,7 +29,7 @@ def get_contours(image:np.ndarray, n_contours:int = 20) -> list[np.ndarray]:
     """
 
     #TODO: Contour value should be decided somehow based on the image, this is brittle but works for the test images 
-    CONTOUR_VALUE = 50  # Value between 0-255 used to find contours in the grayscaled image
+    CONTOUR_VALUE = 60  # Value between 0-255 used to find contours in the grayscaled image
 
     all_contours = measure.find_contours(image, CONTOUR_VALUE, fully_connected='high', positive_orientation='high')
 
@@ -63,7 +63,7 @@ def get_contours(image:np.ndarray, n_contours:int = 20) -> list[np.ndarray]:
 
     best_num_dice_contours = [c for i, c in enumerate(largest_contours) if i not in idxs_to_delete]
 
-    #visualize.plot_image_with_contours(image, best_num_dice_contours)
+    visualize.plot_image_with_contours(image, best_num_dice_contours)
 
     return best_num_dice_contours
 
@@ -137,14 +137,15 @@ def generate_letter_images(dice_images_path:str, letter_images_dir:str=None) -> 
     images_path = Path(dice_images_path)
 
     if images_path.is_dir():
-        in_images = images_path.glob('*.JPG')
-    elif images_path.exists() and images_path.suffix == '.JPG':
+        in_images = list(images_path.glob('*.[jJ][pP][gG]')) + list(images_path.glob('*.[jJ][pP][eE][gG]'))
+    elif images_path.exists() and images_path.suffix == '*.[jJ][pP][gG]' or images_path.suffix == '*.[jJ][pP][eE][gG]':
         in_images = [images_path]
     else:
         raise ValueError(f'Invalid image directory or .JPG path: {images_path}')
     
     out_images = []
     for image_path in in_images:
+        print(image_path)
         image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
   
         contours = get_contours(image)

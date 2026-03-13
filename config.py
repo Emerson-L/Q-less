@@ -9,7 +9,7 @@ EOW = '*'
 
 # MODELING
 BATCH_SIZE = 32
-NUM_EPOCHS = 10
+NUM_EPOCHS = 3
 
 # LEXICON CHOICES
 LEXICON_SOURCE = 'nltk'             # Choose between 'twl' and 'nltk'
