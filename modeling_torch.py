@@ -11,6 +11,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from pathlib import Path
+import argparse
 
 import visualize
 import utils
@@ -203,35 +204,50 @@ def eval_labeled_qless_test_data(model_path:str, plot_wrong_predictions:bool=Fal
     return avg_accuracy
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-a', '--n_augments_rotation', type=int)
+    parser.add_argument('-d', '--dataset', type=str)
+    parser.add_argument('-t', '--train', type=bool)
+    parser.add_argument('-m', '--model_path', type=str)
+    args = parser.parse_args()
 
-    n_augments_rotation = 3
-
-    # Use EMNIST
-    #x_train, y_train, x_test, y_test = wrangle.load_emnist_data(config.EMNIST_DATASET_NAME, n_augments_rotation=n_augments_rotation)
+    if not Path(args.model_path).suffix == '.pth':
+        args.model_path = Path(args.model_path).stem + '.pth'
+    if not Path(args.model_path).exists():
+        raise ValueError(f'Model path {args.model_path} does not exist. Call with --train flag to train')
     
-    # Use chars74k
-    #x_train, y_train, x_test, y_test = wrangle.load_chars74k_data(n_augments_rotation=n_augments_rotation)
+    if args.train:
+        possible_datasets = ['letters', 'byclass' 'chars74k', 'combined']
+        if args.dataset not in possible_datasets:
+            raise ValueError(f'Dataset "{args.dataset}" not recognized, use one of {possible_datasets}')
+        match args.dataset:
+            case 'letters':
+                x_train, y_train, x_test, y_test = wrangle.load_emnist_data('letters', n_augments_rotation=args.n_augments_rotation)
+            case 'byclass':
+                x_train, y_train, x_test, y_test = wrangle.load_emnist_data('byclass', n_augments_rotation=args.n_augments_rotation)
+            case 'chars74k':
+                x_train, y_train, x_test, y_test = wrangle.load_chars74k_data(n_augments_rotation=args.n_augments_rotation)
+            case 'combined':
+                x_train_emnist, y_train_emnist, x_test_emnist, y_test_emnist = wrangle.load_emnist_data(config.EMNIST_DATASET_NAME, n_augments_rotation=args.n_augments_rotation)
+                x_train_chars, y_train_chars, x_test_chars, y_test_chars = wrangle.load_chars74k_data(n_augments_rotation=args.n_augments_rotation)
+                x_train = torch.cat((x_train_emnist, x_train_chars))
+                y_train = torch.cat((y_train_emnist, y_train_chars))
+                x_test = torch.cat((x_test_emnist, x_test_chars))
+                y_test = torch.cat((y_test_emnist, y_test_chars))
 
-    # Use a combination of the two datasets instead
-    # x_train_emnist, y_train_emnist, x_test_emnist, y_test_emnist = wrangle.load_emnist_data(config.EMNIST_DATASET_NAME, n_augments_rotation=n_augments_rotation)
-    # x_train_chars, y_train_chars, x_test_chars, y_test_chars = wrangle.load_chars74k_data(n_augments_rotation=n_augments_rotation)
-    # x_train = torch.cat((x_train_emnist, x_train_chars))
-    # y_train = torch.cat((y_train_emnist, y_train_chars))
-    # x_test = torch.cat((x_test_emnist, x_test_chars))
-    # y_test = torch.cat((y_test_emnist, y_test_chars))
+        print(f'x_train shape: {x_train.shape}')
+        print(f'y_train shape: {y_train.shape}')
+        print(f'x_test shape: {x_test.shape}')
+        print(f'y_test shape: {y_test.shape}')
 
-    # print(f'x_train shape: {x_train.shape}')
-    # print(f'y_train shape: {y_train.shape}')
-    # print(f'x_test shape: {x_test.shape}')
-    # print(f'y_test shape: {y_test.shape}')
+        trainloader, testloader = wrangle.make_dataloaders(x_train, y_train, x_test, y_test)
 
-    # trainloader, testloader = wrangle.make_dataloaders(x_train, y_train, x_test, y_test)
+        losses = train(trainloader, args.model_path)
+        visualize.plot_loss_curve(losses)
 
-    # losses = train(trainloader, config.MODEL_PATH)
-    # visualize.plot_loss_curve(losses)
+        accuracy = load_and_test(testloader, args.model_path)
+        print(f'Accuracy on test set: {accuracy:.2f}%')
 
-    # accuracy = load_and_test(testloader, config.MODEL_PATH)
-    # print(f'Accuracy on test set: {accuracy:.2f}%')
-
-    eval_labeled_qless_test_data('./model_combined_10_aug3r_noQ.pth', plot_wrong_predictions=False)
+    print('Evaluating performance on Q-less test set')
+    eval_labeled_qless_test_data(args.model_path, plot_wrong_predictions=False)
 
