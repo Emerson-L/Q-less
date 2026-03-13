@@ -65,8 +65,10 @@ class Linear(Layer):
         self.activations = x @ self.weights + self.biases
         return self.activations
     
-    def backward(self, grad: np.ndarray) -> np.ndarray:
-        pass 
+    def backward(self, grad: np.ndarray, input: np.ndarray, lr: float) -> np.ndarray:
+        self.weights -= grad @ input.T * lr
+        self.biases -= grad * lr
+        return self.weights.T @ grad
 
 class Conv(Layer):
     """
@@ -152,7 +154,6 @@ class ReLU(Layer):
         return self.output
 
     def backward(self, grad: np.ndarray) -> np.ndarray:
-        assert self.output is not None
         return np.where(self.output, grad, 0)
 
 class Flatten(Layer):
@@ -177,10 +178,12 @@ class SoftMax(Layer):
 
     def forward(self, x:np.ndarray):
         exp = np.exp(x)
-        return exp / np.sum(exp)
+        self.output = exp / np.sum(exp)
+        return self.output
 
     def backward(self, grad: np.ndarray) -> np.ndarray:
-        pass
+        return self.output - grad
+        
 
 def CrossEntropyLoss(probs: np.ndarray, labels: np.ndarray) -> float:
     """
@@ -200,26 +203,6 @@ def CrossEntropyLoss(probs: np.ndarray, labels: np.ndarray) -> float:
     """
     p = np.clip(probs, a_min=1e-4, a_max=None)
     return -1 * np.sum(labels * np.log(p)) / labels.shape[0]
-
-def LossGrad(probs: np.ndarray, labels: np.ndarray) -> np.ndarray:
-    """
-    Get the gradient for cross entropy loss on a batch of data.
-
-    Parameters
-    ----------
-    probs : np.ndarray
-        The predicted probabilities between 0 and 1, with length num_classes
-    labels : np.ndarray
-        The true labels for the data with valyes 0 or 1, with length num_classes
-
-    Returns
-    -------
-    np.ndarray
-        The gradient with respect to each class.
-
-    """
-    p = np.clip(probs, a_min=1e-4, a_max=None)
-    return -labels / p
 
 class Net():
     """
