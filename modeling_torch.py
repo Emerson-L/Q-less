@@ -2,7 +2,11 @@
 modeling_torch.py
 For training, testing, and saving a model using pytorch
 Derived from pytorch CNN tutorial: https://docs.pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-Example usage to train model: python modeling_torch.py
+Example usage to train model: 
+python modeling_torch.py --train --dataset combined --n_augments_rotation 3
+
+Example usage to test a model on Qless test set
+python modeling_torch.py --model_path model_combined_10_aug3r_noQ.pth
 """
 
 import numpy as np
@@ -189,7 +193,7 @@ def eval_labeled_qless_test_data(model_path:str, plot_wrong_predictions:bool=Fal
         average accuracy across all letters
     """
     
-    test_images_dirs = [dir for dir in Path('./assets/letter_images').glob('*') if dir.is_dir()]
+    test_images_dirs = [dir for dir in Path('./assets/letter_images_testset').glob('*') if dir.is_dir()]
 
     Qless_accuracies = []
     for dir in test_images_dirs:
@@ -208,16 +212,16 @@ if __name__ == '__main__':
     parser.add_argument('-a', '--n_augments_rotation', type=int)
     parser.add_argument('-d', '--dataset', type=str)
     parser.add_argument('-t', '--train', type=bool)
-    parser.add_argument('-m', '--model_path', type=str)
+    parser.add_argument('-m', '--model_path', type=str, required=True)
     args = parser.parse_args()
 
     if not Path(args.model_path).suffix == '.pth':
         args.model_path = Path(args.model_path).stem + '.pth'
-    if not Path(args.model_path).exists():
+    if not Path(args.model_path).exists() and not args.train:
         raise ValueError(f'Model path {args.model_path} does not exist. Call with --train flag to train')
     
     if args.train:
-        possible_datasets = ['letters', 'byclass' 'chars74k', 'combined']
+        possible_datasets = ['letters', 'byclass', 'chars74k', 'combined']
         if args.dataset not in possible_datasets:
             raise ValueError(f'Dataset "{args.dataset}" not recognized, use one of {possible_datasets}')
         match args.dataset:
