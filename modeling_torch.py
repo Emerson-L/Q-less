@@ -56,7 +56,7 @@ class Net(torch.nn.Module):
         # torch.Size([32, 256])
         # torch.Size([32, 120])
         # torch.Size([32, 84])
-        # torch.Size([32, 26])
+        # torch.Size([32, 25])
     
 def train(trainloader:DataLoader, model_path:str) -> np.ndarray:
     """
@@ -253,5 +253,5 @@ if __name__ == '__main__':
         print(f'Accuracy on test set: {accuracy:.2f}%')
 
     print('Evaluating performance on Q-less test set')
-    eval_labeled_qless_test_data(args.model_path, plot_wrong_predictions=False)
+    eval_labeled_qless_test_data(args.model_path, plot_wrong_predictions=True)
 
