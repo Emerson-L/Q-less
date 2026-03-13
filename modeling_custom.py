@@ -6,14 +6,7 @@ class Layer:
     """
     One layer of a neural network.
 
-    Supports forward and backward passes to calculate weights.
-
-    Attributes
-    ----------
-    weights : np.array
-        The weights of the layer.
-    bias : float
-        The bias of the layer.
+    Supports forward and backward passes to make predictions and update weights.
     """
     
     def __init__(self):
@@ -36,11 +29,33 @@ class Layer:
         pass
 
     def backward(self, grad: np.ndarray) -> None:
+        """
+        Propogate the gradient backwards and update weights during training.
+
+        Parameters
+        ----------
+        grad : np.ndarray
+            The current gradient
+        """
         pass 
 
 class Linear(Layer):
     """
     Linear, fully connected layer
+
+    Parameters
+    ----------
+    input_size: int
+        The size of the input for the layer.
+    output_size: int
+        The number of neurons in the layer.
+
+    Attributes
+    ----------
+    weights : np.array
+        The weights of the layer.
+    bias : float
+        The bias of the layer.
     """
     def __init__(self, input_size: int, output_size :int):
         self.weights = np.random.randn(input_size, output_size)
@@ -137,20 +152,21 @@ class ReLU(Layer):
         return self.output
 
     def backward(self, grad: np.ndarray) -> np.ndarray:
+        assert self.output is not None
         return np.where(self.output, grad, 0)
 
 class Flatten(Layer):
     """
     Flatten layer
     """
-    def __init__(self):
-        pass
+    def __init__(self, input_shape: tuple):
+        self.input_shape = input_shape
 
     def forward(self, x:np.ndarray):
         return x.reshape(-1)
 
     def backward(self, grad: np.ndarray) -> np.ndarray:
-        pass 
+        return grad.reshape(self.input_shape)
 
 class SoftMax(Layer):
     """
@@ -166,21 +182,44 @@ class SoftMax(Layer):
     def backward(self, grad: np.ndarray) -> np.ndarray:
         pass
 
-def CrossEntropyLoss():
+def CrossEntropyLoss(probs: np.ndarray, labels: np.ndarray) -> float:
     """
-    Cross entropy loss
+    Calculate the cross entropy loss for a batch of data.
 
     Parameters
     ----------
+    probs : np.ndarray
+        The predicted probabilities between 0 and 1, with length num_classes
+    labels : np.ndarray
+        The true labels for the data with valyes 0 or 1, with length num_classes
 
     Returns
     -------
+    float
+        The average loss across all data points in the batch.
     """
-    y = None # 2d array of 1 if correct prediction for each class, 0 otherwise, Shape (batch_size, num_classes)
-    p = None # 2d array of probabilities for the correct prediction, Shape (batch_size, num_classes)
-    
-    p = np.clip(p, a_min=0.0000001, a_max=None)
-    return -1 * np.sum(np.multiply(y, np.log(p))) / y.shape[0]
+    p = np.clip(probs, a_min=1e-4, a_max=None)
+    return -1 * np.sum(labels * np.log(p)) / labels.shape[0]
+
+def LossGrad(probs: np.ndarray, labels: np.ndarray) -> np.ndarray:
+    """
+    Get the gradient for cross entropy loss on a batch of data.
+
+    Parameters
+    ----------
+    probs : np.ndarray
+        The predicted probabilities between 0 and 1, with length num_classes
+    labels : np.ndarray
+        The true labels for the data with valyes 0 or 1, with length num_classes
+
+    Returns
+    -------
+    np.ndarray
+        The gradient with respect to each class.
+
+    """
+    p = np.clip(probs, a_min=1e-4, a_max=None)
+    return -labels / p
 
 class Net():
     """
