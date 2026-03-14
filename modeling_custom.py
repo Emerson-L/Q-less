@@ -123,25 +123,44 @@ class MaxPool(Layer):
     """
     def __init__(self, size:int):
         self.size = size
+        self.max_positions = None
 
     def forward(self, x:np.ndarray):
+        if x.ndim == 2:
+            x = np.reshape(x, (1, x.shape[0], x.shape[1]))
         channels = x.shape[0]
         width = x.shape[1]
         height = x.shape[2]
 
         assert not (width % self.size or height % self.size)
+        self.max_positions = np.empty((channels, width//self.size, height//self.size))
         output = np.empty((channels, width//self.size, height//self.size))
         
         for channel in range(channels):
             image = x[channel]
             for i in range(width//self.size):
                 for j in range(height//self.size):
-                    output[channel, i, j] = np.max(image[i*self.size : (i+1)*self.size, 
-                                                         j*self.size : (j+1)*self.size])
+                    window = image[i*self.size : (i+1)*self.size, 
+                                   j*self.size : (j+1)*self.size]
+                    self.max_positions[channel, i, j] = np.argmax(window)
+                    output[channel, i, j] = np.max(window)
+        
         return output
 
     def backward(self, grad: np.ndarray, lr:float) -> np.ndarray:
-        pass 
+        channels = grad.shape[0]
+        width = grad.shape[1]
+        height = grad.shape[2]
+        
+        output = np.empty((channels, width * self.size, height * self.size))
+        for channel in range(channels):
+            for i in range(width):
+                for j in range(height):
+                    pos_index = int(self.max_positions[channel, i // self.size, j // self.size])
+                    pos = np.unravel_index(pos_index, (self.size, self.size))
+                    output[channel, (i * self.size) + pos[0], (j * self.size) + pos[1]] = grad[channel, i, j]
+
+        return output
 
 class ReLU(Layer):
     """
@@ -168,7 +187,8 @@ class Flatten(Layer):
         return x.reshape(-1)
 
     def backward(self, grad: np.ndarray, lr: float) -> np.ndarray:
-        return grad.reshape(self.input_shape)
+        output = grad.reshape(self.input_shape)
+        return np.reshape(output, (1, output.shape[0], output.shape[1]))
 
 class SoftMax(Layer):
     """
@@ -216,18 +236,18 @@ class Net():
     def forward_pass(self, x:np.ndarray):
         for layer in self.layers:
             x = layer.forward(x)
-            #print(layer)
+            print(layer)
             # print(x)
-            #print(x.shape)
+            print(x.shape)
             #print('\n')
         return x
 
     def backward_pass(self, grad:np.ndarray):
         for layer in self.layers[::-1]:
             grad = layer.backward(grad, lr=self.learning_rate)
-            #print(layer)
+            print(layer)
             # print(grad)
-            #print(grad.shape)
+            print(grad.shape)
             #print('\n')
         return grad
 
@@ -264,13 +284,25 @@ def make_test_arr():
 if __name__ == '__main__':
     #net = build_model()
     
+    # Original test layers
+    # test_layers = [
+    #     Flatten((28, 28)),
+    #     Linear(784, 120),
+    #     ReLU(),
+    #     Linear(120, 25),
+    #     SoftMax(),
+    # ]
+
+    # With a MaxPool
     test_layers = [
-        Flatten((28, 28)),
-        Linear(784, 120),
+        MaxPool(2),
+        Flatten((14, 14)),
+        Linear(196, 120),
         ReLU(),
         Linear(120, 25),
         SoftMax(),
     ]
+
     test_net = Net(test_layers)
 
     test_arr = make_test_arr()
@@ -279,45 +311,12 @@ if __name__ == '__main__':
 
     # Include for 2 channel input
     # test_arr = np.concatenate((test_arr, test_arr * 1.5), axis=0)
-    
-    # print('Input array')
-    # print(test_arr)
-    # print('\n')
-
-    # print('Testing maxpool and relu')
-    # pool = MaxPool(2)
-    # pooled = pool.forward(test_arr)
-    # print(pooled)
-    # print('\n')
-
-    # relu = ReLU()
-    # relued = relu.forward(pooled)
-    # print(relued)
-    # print('\n')
-
-    # print('Testing convolution')
-    # conv = Conv(input_channels=2, num_filters=2, size=3, stride=1, padding=0)
-    # conv_arr = conv.forward(test_arr)
-    # print('Convolved array')
-    # print(conv_arr)
-    # print(conv_arr.shape)
-    # print('\n')
-
-    # print('Testing softmax')
-    # softmaxed = SoftMax().forward(np.array([1, 2, 3, 4]))
-    # print(softmaxed)
-    # print(np.sum(softmaxed))
-
-    # print('Testing flatten')
-    # flattened = Flatten().forward(test_arr)
-    # print(flattened)
-
-    print(labels) #need labels in 0 or 1 format if correct pred
 
     losses = []
     for epoch in range(10):
         pred_letters = []
         for image, label in zip(images, labels):
+
             image = image / 255
 
             #print('Forwarding')
@@ -330,6 +329,9 @@ if __name__ == '__main__':
             #print('Backwarding')
             test_net.backward_pass(correct)
 
+            # break for testing one forward and back
+            # break
+
             #print(preds)
             loss = CrossEntropyLoss(preds, correct)
             losses.append(loss)
@@ -337,7 +339,7 @@ if __name__ == '__main__':
         print(np.mean(losses))
         losses = []
         
-    print(labels)
+    print(list(labels))
     print(pred_letters)
 
 
