@@ -267,3 +267,48 @@ def remap_preds(preds:np.ndarray) -> np.ndarray:
         remapped predictions with a gap at 16
     """
     return np.where(preds >= 16, preds + 1, preds)
+
+
+def load_data_splits_from_args(dataset:str, n_augments_rotation:int):
+    """
+    Loads data splits (train and test) given a dataset and number of augmentations
+
+    Parameters
+    ----------
+    dataset: str
+        name of dataset, must be one of POSSIBLE_DATASETS
+    n_augments_rotation:int
+        number of rotation augmentations to include in datasets
+
+    Returns
+    -------
+    x_train : torch.tensor
+    y_train : torch.tensor
+    x_test : torch.tensor
+    y_test : torch.tensor
+    """
+    POSSIBLE_DATASETS = ['letters', 'byclass', 'chars74k', 'combined']
+    if dataset not in POSSIBLE_DATASETS:
+        raise ValueError(f'Dataset "{dataset}" not recognized, use one of {POSSIBLE_DATASETS}')
+    match dataset:
+        case 'letters':
+            x_train, y_train, x_test, y_test = load_emnist_data('letters', n_augments_rotation=n_augments_rotation)
+        case 'byclass':
+            x_train, y_train, x_test, y_test = load_emnist_data('byclass', n_augments_rotation=n_augments_rotation)
+        case 'chars74k':
+            x_train, y_train, x_test, y_test = load_chars74k_data(n_augments_rotation=n_augments_rotation)
+        case 'combined':
+            x_train_emnist, y_train_emnist, x_test_emnist, y_test_emnist = load_emnist_data('byclass', n_augments_rotation=n_augments_rotation)
+            x_train_chars, y_train_chars, x_test_chars, y_test_chars = load_chars74k_data(n_augments_rotation=n_augments_rotation)
+            x_train = torch.cat((x_train_emnist, x_train_chars))
+            y_train = torch.cat((y_train_emnist, y_train_chars))
+            x_test = torch.cat((x_test_emnist, x_test_chars))
+            y_test = torch.cat((y_test_emnist, y_test_chars))
+
+    print('Loaded data shapes:')
+    print(f'x_train shape: {x_train.shape}')
+    print(f'y_train shape: {y_train.shape}')
+    print(f'x_test shape: {x_test.shape}')
+    print(f'y_test shape: {y_test.shape}')
+    
+    return x_train, y_train, x_test, y_test

@@ -1,11 +1,12 @@
 """
 modeling_torch.py
-For training, testing, and saving a model using pytorch
-Derived from pytorch CNN tutorial: https://docs.pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
-Example usage to train model: 
-python modeling_torch.py --train --dataset combined --n_augments_rotation 3
+For training, testing, and saving a model using PyTorch
+Derived from PyTorch CNN tutorial: https://docs.pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 
-Example usage to test a model on Qless test set
+Example usage to train model: 
+python modeling_torch.py --train True --dataset combined --n_augments_rotation 3 --n_epochs 3 --model_path ./models/model.pth
+
+Example usage to test an existing model on Qless test set
 python modeling_torch.py --model_path model_combined_10_aug3r_noQ.pth
 """
 
@@ -19,12 +20,11 @@ import argparse
 
 import visualize
 import utils
-import config
 import wrangle
 
 class Net(torch.nn.Module):
     """
-    CNN architecture derived from pytorch CNN tutorial
+    CNN architecture derived from PyTorch CNN tutorial
     """
     def __init__(self):
         super().__init__()
@@ -58,14 +58,16 @@ class Net(torch.nn.Module):
         # torch.Size([32, 84])
         # torch.Size([32, 25])
     
-def train(trainloader:DataLoader, model_path:str) -> np.ndarray:
+def train(trainloader:DataLoader, n_epochs:int, model_path:str) -> np.ndarray:
     """
-    Trains and saves model. Derived from pytorch CNN tutorial
+    Trains and saves model. Derived from PyTorch CNN tutorial
 
     Parameters
     ----------
     trainloader : torch DataLoader
         DataLoader with training dataset
+    n_epochs : int
+        number of epochs to train for
     model_path : str
         path to save trained model to
 
@@ -79,7 +81,7 @@ def train(trainloader:DataLoader, model_path:str) -> np.ndarray:
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
     losses = []
-    for epoch in range(config.NUM_EPOCHS):
+    for epoch in range(n_epochs):
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
             inputs, labels = data
@@ -105,7 +107,7 @@ def train(trainloader:DataLoader, model_path:str) -> np.ndarray:
 
 def load_and_test(testloader:DataLoader, model_path:str, plot_wrong_predictions:bool=False) -> float:
     """
-    Loads and tests a given model on a given test set. Derived from pytorch CNN tutorial
+    Loads and tests a given model on a given test set. Derived from PyTorch CNN tutorial
 
     Parameters
     ---------
@@ -210,6 +212,7 @@ def eval_labeled_qless_test_data(model_path:str, plot_wrong_predictions:bool=Fal
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-a', '--n_augments_rotation', type=int)
+    parser.add_argument('-e', '--n_epochs', type=int, default=3)
     parser.add_argument('-d', '--dataset', type=str)
     parser.add_argument('-t', '--train', type=bool)
     parser.add_argument('-m', '--model_path', type=str, required=True)
@@ -221,32 +224,11 @@ if __name__ == '__main__':
         raise ValueError(f'Model path {args.model_path} does not exist. Call with --train flag to train')
     
     if args.train:
-        possible_datasets = ['letters', 'byclass', 'chars74k', 'combined']
-        if args.dataset not in possible_datasets:
-            raise ValueError(f'Dataset "{args.dataset}" not recognized, use one of {possible_datasets}')
-        match args.dataset:
-            case 'letters':
-                x_train, y_train, x_test, y_test = wrangle.load_emnist_data('letters', n_augments_rotation=args.n_augments_rotation)
-            case 'byclass':
-                x_train, y_train, x_test, y_test = wrangle.load_emnist_data('byclass', n_augments_rotation=args.n_augments_rotation)
-            case 'chars74k':
-                x_train, y_train, x_test, y_test = wrangle.load_chars74k_data(n_augments_rotation=args.n_augments_rotation)
-            case 'combined':
-                x_train_emnist, y_train_emnist, x_test_emnist, y_test_emnist = wrangle.load_emnist_data(config.EMNIST_DATASET_NAME, n_augments_rotation=args.n_augments_rotation)
-                x_train_chars, y_train_chars, x_test_chars, y_test_chars = wrangle.load_chars74k_data(n_augments_rotation=args.n_augments_rotation)
-                x_train = torch.cat((x_train_emnist, x_train_chars))
-                y_train = torch.cat((y_train_emnist, y_train_chars))
-                x_test = torch.cat((x_test_emnist, x_test_chars))
-                y_test = torch.cat((y_test_emnist, y_test_chars))
-
-        print(f'x_train shape: {x_train.shape}')
-        print(f'y_train shape: {y_train.shape}')
-        print(f'x_test shape: {x_test.shape}')
-        print(f'y_test shape: {y_test.shape}')
+        x_train, y_train, x_test, y_test = wrangle.load_data_splits_from_args(args.dataset, args.n_augments_rotation)
 
         trainloader, testloader = wrangle.make_dataloaders(x_train, y_train, x_test, y_test)
 
-        losses = train(trainloader, args.model_path)
+        losses = train(trainloader, args.n_epochs, args.model_path)
         visualize.plot_loss_curve(losses)
 
         accuracy = load_and_test(testloader, args.model_path)

@@ -1,17 +1,21 @@
 
 Q-less solver by Indy and Emerson
 
+**Running It**
+All runnable scripts listed below have example commands for running at the top of the file.
+- `pipeline.py`:
+- `modeling_torch.py`: For training and testing models using PyTorch
+- `modeling_custom.py`: For training and testing models using our custom CNN architecture
+
 **TODO**
-- find_dice.py: Convert everything possible that uses skimage to use opencv (i.e. transform, but probably not measure)
 - Make UI that shows the dice image and the predictions for each dice right next to each die so that user can verify themselves if all of the letters are right?
 
 **Ideas For Improvement**
-- Somehow rotate our letters before predicting on them
+- Synthetic dataset generation using Q-Less font
 
 **Extensions**
 - How many ways are there to solve a set of dice?
 - Find a set of dice that maximizes probability that a roll is solvable
-
 
 **Taking Pictures of Dice**
 -TODO: Take some examples of good images

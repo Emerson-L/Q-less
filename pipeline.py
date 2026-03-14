@@ -1,3 +1,12 @@
+"""
+pipeline.py
+For going from an image of 12 dice to a solved Q-Less board 
+
+Example usages (for either a directory of images or single image):
+python pipeline.py --images_path ./assets/dice_images/paper_background/
+python pipeline.py --images_path ./assets/dice_images/paper_background/IMG_3404.JPG
+"""
+
 import numpy as np
 import cv2 as cv
 from pathlib import Path

@@ -9,7 +9,6 @@ EOW = '*'
 
 # MODELING
 BATCH_SIZE = 32
-NUM_EPOCHS = 3
 
 # LEXICON CHOICES
 LEXICON_SOURCE = 'nltk'             # Choose between 'twl' and 'nltk'
@@ -25,6 +24,4 @@ CHARS_74K_ENGLISH_PATH = './assets/chars74k_English/Fnt/'
 DICE_IMAGES_DIR = './assets/dice_images/old_paper_background/'
 LETTER_IMAGES_DIR = './assets/letter_images/'
 
-EMNIST_DATASET_NAME = 'byclass'
-MODEL_PATH = f'./model_{NUM_EPOCHS}.pth'
 BENCHMARK_MODEL_PATH = './models/benchmark_model_combined_10_3r.pth'

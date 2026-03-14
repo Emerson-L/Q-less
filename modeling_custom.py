@@ -1,5 +1,21 @@
+"""
+modeling_custom.py
+For training, testing, and saving a model using Indy and Emerson's custom CNN architecture (TM)
+
+Example usage to train model:
+python modeling_custom.py --train True --dataset combined --n_augments_rotation 3 --n_epochs 3 --model_path ./models/model.pth
+
+Example usage to test an existing model on Qless test set:
+python modeling_custom.py --model_path model_combined_10_aug3r_noQ.pth
+"""
+
 import numpy as np
+import argparse
+import pickle
+from pathlib import Path
+
 import wrangle
+import visualize
 
 
 class Layer:
@@ -251,8 +267,66 @@ class Net():
             #print('\n')
         return grad
 
-    def train(self, x:np.ndarray, y:np.ndarray):
-        pass
+    def train(self, x:np.ndarray, y:np.ndarray, n_epochs:int, model_path:str):
+        losses = []
+        for epoch in n_epochs:
+            running_loss = 0
+            for i, image, label in enumerate(zip(x, y)):
+                image = image / 255
+
+                preds = self.forward_pass(image)
+
+                correct = np.zeros((len(preds)))
+                correct[label] = 1
+
+                test_net.backward_pass(correct)
+
+                running_loss += CrossEntropyLoss(preds, correct)
+
+                if i % 200 == 199:
+                    print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 200:.3f}')
+                    losses.append(running_loss)
+                    running_loss = 0
+
+        with open(model_path, 'wb') as f:
+            pickle.dump(self, f)
+        print('Trained, saved model')
+        return losses
+    
+def load_and_test(x_test:np.ndarray, y_test:np.ndarray, model_path:str, plot_wrong_predictions:bool=False):
+    """
+    Load a model and evaluate it on the given test set
+
+    Parameters
+    ----------
+    x_test : np.ndarray
+        array of test images
+    y_test : np.ndarray
+        array of test labels
+    model_path : str
+        path to model .pkl to load and test
+    plot_wrong_predictions : bool
+        whether to plot predictions that were incorrect 
+
+    Returns
+    -------
+    accuracy : float
+        model accuracy on test set
+    """
+    with open(model_path, 'rb') as f:
+        net = pickle.load(f)
+
+    correct = 0
+    total = 0
+    for image, label in zip(x_test, y_test):
+        preds = net.forward_pass(image)
+        if np.argmax(preds) == label:
+            correct += 1
+        total += 1
+        # add plotting wrong predictions ideally without duplicating too much logic from modeling_torch
+
+    accuracy = 100 * correct / total
+    return accuracy
 
 def build_model():
     layers = [
@@ -262,7 +336,7 @@ def build_model():
         Conv(2, 16, 5),
         ReLU(),
         MaxPool(2),
-        Flatten(), #Need to find size of this
+        Flatten((1, 1)), #Need to find size of this
         Linear(256, 120),
         ReLU(),
         Linear(120, 84),
@@ -282,8 +356,6 @@ def make_test_arr():
     return np.reshape(test_arr, (1, test_arr_size, test_arr_size))
 
 if __name__ == '__main__':
-    #net = build_model()
-    
     # Original test layers
     # test_layers = [
     #     Flatten((28, 28)),
@@ -341,6 +413,34 @@ if __name__ == '__main__':
         
     print(list(labels))
     print(pred_letters)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-a', '--n_augments_rotation', type=int)
+    parser.add_argument('-e', '--n_epochs', type=int)
+    parser.add_argument('-d', '--dataset', type=str)
+    parser.add_argument('-t', '--train', type=bool)
+    parser.add_argument('-m', '--model_path', type=str, required=True)
+    args = parser.parse_args()
+
+    if not Path(args.model_path).suffix == '.pkl':
+        args.model_path = Path(args.model_path).stem + '.pkl'
+    if not Path(args.model_path).exists() and not args.train:
+        raise ValueError(f'Model path {args.model_path} does not exist. Call with --train flag to train')
+
+    if args.train:
+        x_train, y_train, x_test, y_test = wrangle.load_data_splits_from_args(args.dataset, args.n_augments_rotation)
+        
+        net = build_model()
+        losses = net.train(x_train, y_train, args.n_epochs, args.model_path)
+        visualize.plot_loss_curve(losses)
+
+        accuracy = load_and_test(x_test, y_test, args.model_path)
+        print(f'Accuracy on test set: {accuracy:.2f}%')
+
+    #eval on qless test set
+    
 
 
 
