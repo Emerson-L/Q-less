@@ -22,7 +22,7 @@ TRIE_PKL_PATH = './assets/trie.pkl'
 GADDAG_PKL_PATH = './assets/gaddag.pkl'
 
 CHARS_74K_ENGLISH_PATH = './assets/chars74k_English/Fnt/'
-DICE_IMAGES_DIR = './assets/dice_images/paper_background/'
+DICE_IMAGES_DIR = './assets/dice_images/old_paper_background/'
 LETTER_IMAGES_DIR = './assets/letter_images/'
 
 EMNIST_DATASET_NAME = 'byclass'

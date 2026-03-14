@@ -1,6 +1,7 @@
 import numpy as np
 import cv2 as cv
 from pathlib import Path
+import argparse
 
 import find_dice
 import modeling_torch
@@ -32,12 +33,23 @@ def predict_letters_from_dice_image(image_path:str, model_path:str):
 
 
 if __name__ == '__main__':
-    true_dice = utils.load_dice(config.DICE_CSV_PATH)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--images_path', type=str, help='Path to jpg/jpeg or dir of jpg/jpegs')
+    args = parser.parse_args()
 
+    images_path = Path(args.images_path)
+    if images_path.is_dir():
+        in_images = list(images_path.glob('*.[jJ][pP][gG]')) + list(images_path.glob('*.[jJ][pP][eE][gG]'))
+    elif images_path.exists() and (images_path.match('*.[jJ][pP][gG]') or images_path.match('*.[jJ][pP][eE][gG]')):
+        in_images = [images_path]
+    else:
+        raise ValueError(f'Invalid image directory or image path: {images_path}')
+
+    true_dice = utils.load_dice(config.DICE_CSV_PATH)
     solver = Solver(verbose=True, show_final_board=True)
 
-    dice_image_dir = './assets/dice_images/paper_background/'
-    for dice_image_path in Path(dice_image_dir).glob('*.JPG'):
+    for dice_image_path in in_images:
+        print(f'Trying to solve {dice_image_path}')
         dice_image = cv.imread(dice_image_path)
         cv.imshow('Dice Image', dice_image)
 

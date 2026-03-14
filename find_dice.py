@@ -29,7 +29,7 @@ def get_contours(image:np.ndarray, n_contours:int = 20) -> list[np.ndarray]:
     """
 
     #TODO: Contour value should be decided somehow based on the image, this is brittle but works for the test images 
-    CONTOUR_VALUE = 50  # Value between 0-255 used to find contours in the grayscaled image
+    CONTOUR_VALUE = 60 # Value between 0-255 used to find contours in the grayscaled image
 
     all_contours = measure.find_contours(image, CONTOUR_VALUE, fully_connected='high', positive_orientation='high')
 
@@ -112,14 +112,14 @@ def contours_to_letter_images(image:np.ndarray, contours:list[np.ndarray]) -> li
 
     return dice_images
 
-def generate_letter_images(dice_images_path:str, letter_images_dir:str=None) -> list[np.ndarray]:
+def generate_letter_images(dice_image_path:str, letter_images_dir:str=None) -> list[np.ndarray]:
     """
     Generates 28x28 letter images from an image of dice
 
     Parameters
     ----------
-    dice_images_path : str
-        Path to a single .JPG image or directory of .JPG images
+    dice_image_path : str
+        Path to a single .JPG image
 
     letter_images_dir : str
         path to a directory to put images in. Will be made and images written into it if provided.
@@ -134,34 +134,25 @@ def generate_letter_images(dice_images_path:str, letter_images_dir:str=None) -> 
     if write:
         Path(letter_images_dir).mkdir(exist_ok=True)
 
-    images_path = Path(dice_images_path)
-
-    if images_path.is_dir():
-        in_images = list(images_path.glob('*.[jJ][pP][gG]')) + list(images_path.glob('*.[jJ][pP][eE][gG]'))
-    elif images_path.exists() and (images_path.match('*.[jJ][pP][gG]') or images_path.match('*.[jJ][pP][eE][gG]')):
-        in_images = [images_path]
-    else:
-        raise ValueError(f'Invalid image directory or .JPG path: {images_path}')
+    image_path = Path(dice_image_path)
     
     out_images = []
-    for image_path in in_images:
-        print(f'Solving {image_path}')
-        image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
-  
-        contours = get_contours(image)
-        letter_images = contours_to_letter_images(image, contours)
+
+    image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
+    contours = get_contours(image)
+    letter_images = contours_to_letter_images(image, contours)
+
+    if write:
+        this_image_dir = f'{letter_images_dir}/{image_path.stem}/'
+        Path(this_image_dir).mkdir(exist_ok=True)
+    
+    for i, letter_image in enumerate(letter_images):
+        cv2_image = (letter_image * 255).astype(np.uint8)
+        cv2_inverted = cv.bitwise_not(cv2_image)
+        out_images.append(cv2_inverted)
 
         if write:
-            this_image_dir = f'{letter_images_dir}/{image_path.stem}/'
-            Path(this_image_dir).mkdir(exist_ok=True)
-        
-        for i, letter_image in enumerate(letter_images):
-            cv2_image = (letter_image * 255).astype(np.uint8)
-            cv2_inverted = cv.bitwise_not(cv2_image)
-            out_images.append(cv2_inverted)
-
-            if write:
-                cv.imwrite(f'{this_image_dir}/letter_{i}.png', cv2_inverted)
+            cv.imwrite(f'{this_image_dir}/letter_{i}.png', cv2_inverted)
 
     return out_images
 
