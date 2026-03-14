@@ -28,7 +28,7 @@ class Layer:
         """
         pass
 
-    def backward(self, grad: np.ndarray) -> None:
+    def backward(self, grad: np.ndarray, lr:float) -> None:
         """
         Propogate the gradient backwards and update weights during training.
 
@@ -58,15 +58,16 @@ class Linear(Layer):
         The bias of the layer.
     """
     def __init__(self, input_size: int, output_size :int):
-        self.weights = np.random.randn(input_size, output_size)
+        self.weights = np.random.randn(output_size, input_size)
         self.biases = np.random.randn(output_size)
+        self.inputs = None
 
     def forward(self, x: np.ndarray) -> np.ndarray:
-        self.activations = x @ self.weights + self.biases
-        return self.activations
+        self.inputs = x
+        return self.weights @ x + self.biases
     
-    def backward(self, grad: np.ndarray, input: np.ndarray, lr: float) -> np.ndarray:
-        self.weights -= grad @ input.T * lr
+    def backward(self, grad: np.ndarray, lr: float) -> np.ndarray:
+        self.weights -= grad.reshape(-1, 1) @ self.inputs.reshape(-1, 1).T * lr
         self.biases -= grad * lr
         return self.weights.T @ grad
 
@@ -112,7 +113,7 @@ class Conv(Layer):
                 convolved[i][j] = np.sum(image_part * filter)
         return convolved
 
-    def backward(self, grad: np.ndarray) -> np.ndarray:
+    def backward(self, grad: np.ndarray, lr:float) -> np.ndarray:
         pass 
         # Update filter weights
 
@@ -139,7 +140,7 @@ class MaxPool(Layer):
                                                          j*self.size : (j+1)*self.size])
         return output
 
-    def backward(self, grad: np.ndarray) -> np.ndarray:
+    def backward(self, grad: np.ndarray, lr:float) -> np.ndarray:
         pass 
 
 class ReLU(Layer):
@@ -153,7 +154,7 @@ class ReLU(Layer):
         self.output = np.clip(x, a_min=0, a_max=None)
         return self.output
 
-    def backward(self, grad: np.ndarray) -> np.ndarray:
+    def backward(self, grad: np.ndarray, lr:float) -> np.ndarray:
         return np.where(self.output, grad, 0)
 
 class Flatten(Layer):
@@ -166,7 +167,7 @@ class Flatten(Layer):
     def forward(self, x:np.ndarray):
         return x.reshape(-1)
 
-    def backward(self, grad: np.ndarray) -> np.ndarray:
+    def backward(self, grad: np.ndarray, lr: float) -> np.ndarray:
         return grad.reshape(self.input_shape)
 
 class SoftMax(Layer):
@@ -181,7 +182,7 @@ class SoftMax(Layer):
         self.output = exp / np.sum(exp)
         return self.output
 
-    def backward(self, grad: np.ndarray) -> np.ndarray:
+    def backward(self, grad: np.ndarray, lr:float) -> np.ndarray:
         return self.output - grad
         
 
@@ -194,7 +195,7 @@ def CrossEntropyLoss(probs: np.ndarray, labels: np.ndarray) -> float:
     probs : np.ndarray
         The predicted probabilities between 0 and 1, with length num_classes
     labels : np.ndarray
-        The true labels for the data with valyes 0 or 1, with length num_classes
+        The true labels for the data with values 0 or 1, with length num_classes
 
     Returns
     -------
@@ -210,23 +211,25 @@ class Net():
     """
     def __init__(self, layers:list[Layer]):
         self.layers = layers
+        self.learning_rate = 0.01
 
     def forward_pass(self, x:np.ndarray):
         for layer in self.layers:
             x = layer.forward(x)
-            print(layer)
+            #print(layer)
             # print(x)
-            print(x.shape)
+            #print(x.shape)
             #print('\n')
         return x
 
     def backward_pass(self, grad:np.ndarray):
-        for layer in self.layers:
-            grad = layer.backward(grad)
-            print(layer)
+        for layer in self.layers[::-1]:
+            grad = layer.backward(grad, lr=self.learning_rate)
+            #print(layer)
             # print(grad)
-            print(grad.shape)
+            #print(grad.shape)
             #print('\n')
+        return grad
 
     def train(self, x:np.ndarray, y:np.ndarray):
         pass
@@ -239,7 +242,7 @@ def build_model():
         Conv(2, 16, 5),
         ReLU(),
         MaxPool(2),
-        Flatten(),
+        Flatten(), #Need to find size of this
         Linear(256, 120),
         ReLU(),
         Linear(120, 84),
@@ -259,10 +262,10 @@ def make_test_arr():
     return np.reshape(test_arr, (1, test_arr_size, test_arr_size))
 
 if __name__ == '__main__':
-    net = build_model()
+    #net = build_model()
     
     test_layers = [
-        Flatten(),
+        Flatten((28, 28)),
         Linear(784, 120),
         ReLU(),
         Linear(120, 25),
@@ -272,7 +275,7 @@ if __name__ == '__main__':
 
     test_arr = make_test_arr()
 
-    images, labels = wrangle.load_qless_test_data('./assets/letter_images/IMG_3296')
+    images, labels = wrangle.load_qless_test_data('./assets/letter_images_testset/IMG_3296')
 
     # Include for 2 channel input
     # test_arr = np.concatenate((test_arr, test_arr * 1.5), axis=0)
@@ -309,10 +312,33 @@ if __name__ == '__main__':
     # flattened = Flatten().forward(test_arr)
     # print(flattened)
 
-    print('Testing full forwarding')
-    for image in images:
-        test_net.forward_pass(image)
-        #test_net.backward_pass()
+    print(labels) #need labels in 0 or 1 format if correct pred
+
+    losses = []
+    for epoch in range(10):
+        pred_letters = []
+        for image, label in zip(images, labels):
+            image = image / 255
+
+            #print('Forwarding')
+            preds = test_net.forward_pass(image)
+            pred_letters.append(np.argmax(preds))
+
+            correct = np.zeros((len(preds)))
+            correct[label] = 1
+
+            #print('Backwarding')
+            test_net.backward_pass(correct)
+
+            #print(preds)
+            loss = CrossEntropyLoss(preds, correct)
+            losses.append(loss)
+
+        print(np.mean(losses))
+        losses = []
+        
+    print(labels)
+    print(pred_letters)
 
 
 
