@@ -129,6 +129,7 @@ class Solver:
         self.verbose = verbose
         self.show_plays = show_plays
         self.show_final_board = show_final_board
+        self.lexicon = utils.load_words(config.LEXICON_SOURCE)
 
     def make_empty_board(self) -> np.ndarray:
         """
@@ -190,7 +191,7 @@ class Solver:
 
         self.start_rack = start_rack
         self.rack = Counter(start_rack)
-        self.valid_words = utils.get_valid_words(start_rack, utils.load_words(config.LEXICON_SOURCE))
+        self.valid_words = utils.get_valid_words(start_rack, self.lexicon)
 
         self.board = self.make_empty_board()
         self.invalid_squares = set()

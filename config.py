@@ -27,4 +27,4 @@ LETTER_IMAGES_DIR = './assets/letter_images/'
 
 EMNIST_DATASET_NAME = 'byclass'
 MODEL_PATH = f'./model_{NUM_EPOCHS}.pth'
-BENCHMARK_MODEL_PATH = './benchmark_model_combined_10_aug_3random.pth'
+BENCHMARK_MODEL_PATH = './models/benchmark_model_combined_10_3r.pth'

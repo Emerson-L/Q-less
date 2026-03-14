@@ -34,7 +34,7 @@ def predict_letters_from_dice_image(image_path:str, model_path:str):
 if __name__ == '__main__':
     true_dice = utils.load_dice(config.DICE_CSV_PATH)
 
-    #TODO: Inefficient to load lexicon every time we solve, maybe just pass the lexicon to the class instantiation
+    solver = Solver(verbose=True, show_final_board=True)
 
     dice_image_dir = './assets/dice_images/paper_background/'
     for dice_image_path in Path(dice_image_dir).glob('*.JPG'):
@@ -49,8 +49,8 @@ if __name__ == '__main__':
         if not utils.is_possible_roll(pred_letters_lower, true_dice):
             msg = 'Roll is not possible, machine learning bad'
             print(msg)
+            continue
             #raise ValueError(msg)
 
-        solver = Solver(pred_letters_lower, verbose=True)
-        solver.solve()
+        solved = solver.solve(pred_letters_lower)
 
