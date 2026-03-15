@@ -4,6 +4,8 @@ import networkx as nx
 from typing import Optional
 
 import config
+import wrangle
+import utils
 
 def plot_board(board:np.ndarray, letters:list[str], highlights:Optional[np.ndarray]=None, output_file:Optional[str]=None):
     """
@@ -192,3 +194,27 @@ def visualize_bpm_graph(matches: list[int], dice: list[list[str]], roll: list[st
     plt.title("Bipartite Graph Visualization")
     plt.axis('off') # Hide axis
     plt.show()
+
+def plot_predictions_with_letter(images:np.ndarray, predicted:np.ndarray, labels:np.ndarray, probs:np.ndarray=None):
+    """
+    Plot images where predictions were wrong
+
+    Parameters
+    ----------
+    images: np.ndarray or torch.Tensor
+        images to plot
+    predicted: np.ndarray or torch.Tensor
+        predicted values for each image
+    labels : np.ndarray or torch.Tensor
+        labels for each image
+    probs : np.ndarray or torch.Tensor
+        probabilities output by the model for each letter for each image
+    """
+    predictable_letters_list = utils.numbers_to_letters(list(range(16)) + list(range(17, 26)))
+    for i, (image, pred, label) in enumerate(zip(images, predicted, labels)):
+        if pred != label:
+            pred = wrangle.remap_preds(pred)
+            letter = utils.numbers_to_letters([pred])[0]
+            plot_image(image[0], letter=letter)
+            if probs is not None:
+                plot_probs(predictable_letters_list, probs[i])

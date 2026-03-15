@@ -30,6 +30,7 @@ For best model performance in selecting the correct dice in the pictures you tak
 - [Chars74k Dataset](https://teodecampos.github.io/chars74k/)
 - [How do we know if we made decent letter predictions? What are all of the possible 12 letter words? (Bipartite Matching)](https://www.geeksforgeeks.org/dsa/maximum-bipartite-matching/)
 - [PyTorch CNN Tutorial](https://docs.pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html)
+- [Backpropagation for Convolutional Layers](https://pavisj.medium.com/convolutions-and-backpropagations-46026a8f5d2c)
 
 **Troubleshooting**
 - When trying to download EMNIST data, if getting 'zipfile.BadZipFile: File is not a zip file', download the emnist dataset from the website, rename gzip.zip to emnist.zip, and move it to your home directory at ~/.cache/emnist

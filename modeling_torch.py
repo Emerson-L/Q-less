@@ -7,7 +7,7 @@ Example usage to train model:
 python modeling_torch.py --train True --dataset combined --n_augments_rotation 3 --n_epochs 3 --model_path ./models/model.pth
 
 Example usage to test an existing model on Qless test set
-python modeling_torch.py --model_path model_combined_10_aug3r_noQ.pth
+python modeling_torch.py --model_path ./models/benchmark_model_combined_10_3r.pth
 """
 
 import numpy as np
@@ -19,7 +19,6 @@ from pathlib import Path
 import argparse
 
 import visualize
-import utils
 import wrangle
 
 class Net(torch.nn.Module):
@@ -135,13 +134,7 @@ def load_and_test(testloader:DataLoader, model_path:str, plot_wrong_predictions:
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
             if plot_wrong_predictions:
-                for i, (image, pred, label) in enumerate(zip(images, predicted, labels)):
-                    if pred != label:
-                        pred = wrangle.remap_preds(pred)
-                        letter = utils.numbers_to_letters([pred])[0]
-                        visualize.plot_image(image[0], letter=letter)
-                        predictable_letters_list = utils.numbers_to_letters(list(range(16)) + list(range(17, 26)))
-                        visualize.plot_probs(predictable_letters_list, softmaxed_outputs[i])
+                visualize.plot_predictions_with_letter(images, predicted, labels, probs=softmaxed_outputs)
 
     accuracy = 100 * correct / total
     return accuracy

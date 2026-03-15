@@ -3,10 +3,10 @@ modeling_custom.py
 For training, testing, and saving a model using Indy and Emerson's custom CNN architecture (TM)
 
 Example usage to train model:
-python modeling_custom.py --train True --dataset combined --n_augments_rotation 3 --n_epochs 3 --model_path ./models/model.pth
+python modeling_custom.py --train True --dataset combined --n_augments_rotation 3 --n_epochs 3 --model_path ./models/model.pkl
 
 Example usage to test an existing model on Qless test set:
-python modeling_custom.py --model_path model_combined_10_aug3r_noQ.pth
+python modeling_custom.py --model_path model_combined_10_aug3r_noQ.pkl
 """
 
 import numpy as np
@@ -102,17 +102,16 @@ class Conv(Layer):
         init_st_dev = np.sqrt(2 / (input_channels * size * size)) # Kaiming He initialization: we initialize filters randomly with std root (2 / num_inputs)
         self.filters = [rng.normal(loc=0, scale=init_st_dev, size=(self.size, self.size)) for _ in range(num_filters)]
 
-        self.outdim_x = None
-        self.outdim_y = None
+        self.input = None
 
     def forward(self, x:np.ndarray):
         assert x.shape[0] == self.input_channels
+        self.input = x
 
         x = np.pad(x, ((0, 0), (self.padding, self.padding), (self.padding, self.padding)))
-        self.outdim_x = int(((x[0].shape[0] - self.size) / self.stride) + 1)
-        self.outdim_y = int(((x[0].shape[1] - self.size) / self.stride) + 1)
 
-        output = np.zeros((self.num_filters, self.outdim_x, self.outdim_y))
+        example_conv = self.convolve(x[0], self.filters[0])
+        output = np.zeros((self.num_filters, example_conv.shape[0], example_conv.shape[1]))
         for filter_idx, filter in enumerate(self.filters):
             for channel in range(self.input_channels):
                 image = x[channel]
@@ -120,18 +119,57 @@ class Conv(Layer):
 
         return output
     
-    def convolve(self, image:np.ndarray, filter:np.ndarray):
-        convolved = np.zeros((self.outdim_x, self.outdim_y))
-        for i in range(self.outdim_x):
-            for j in range(self.outdim_y):
-                image_part = image[i*self.stride : (i*self.stride)+self.size, 
-                                   j*self.stride : (j*self.stride)+self.size]
+    def convolve(self, image:np.ndarray, filter:np.ndarray, full:bool=False):
+        """
+        Full convolution means with enough padding so that the edge of the filter goes to the very edge of the image
+        """
+        assert (image.shape[0] > filter.shape[0]) and (image.shape[1] > filter.shape[1])
+        image = np.array(image)
+        filter = np.array(filter)
+
+        filter_width, filter_height = filter.shape[0], filter.shape[1]
+        if full:
+            image = np.pad(image, ((filter_width - 1, filter_height - 1), (filter_width - 1, filter_height - 1)))
+
+        outdim_x = int(((image.shape[0] - filter_width) / self.stride) + 1)
+        outdim_y = int(((image.shape[1] - filter_height) / self.stride) + 1)
+    
+        convolved = np.zeros((outdim_x, outdim_y))
+        for i in range(outdim_x):
+            for j in range(outdim_y):
+                image_part = image[i*self.stride : (i*self.stride) + filter_width, 
+                                   j*self.stride : (j*self.stride) + filter_height]
+                #print(f'image_part shape: {image_part.shape}')
+                #print(f'filter shape: {filter.shape}')
                 convolved[i][j] = np.sum(image_part * filter)
         return convolved
 
     def backward(self, grad: np.ndarray, lr:float) -> np.ndarray:
-        pass 
-        # Update filter weights
+        example_output_conv = self.convolve(grad[0], np.rot90(self.filters[0], k=2), full=True)
+        output_grad = np.zeros((self.input_channels, example_output_conv.shape[0], example_output_conv.shape[1]))
+        #print('output_grad shape')
+        #print(output_grad.shape)
+        for channel in range(self.input_channels):
+            image_grad = grad[channel]
+            #print('image_grad shape')
+            #print(image_grad.shape)
+            #print('1 channel self.input shape')
+            #print(self.input[channel].shape)
+
+            filter_grad = self.convolve(self.input[channel], image_grad) # get dl/df, the regular conv of in gradient and input
+            #print('filter_grad shape')
+            #print(filter_grad.shape)
+            for filter_idx, filter in enumerate(self.filters):
+                rotated_180_filter = np.rot90(filter, k=2)
+                #print(filter.shape)
+                #print(rotated_180_filter.shape)
+                output_grad[channel] += self.convolve(image_grad, rotated_180_filter, full=True) # update grad here with full conv of grad and 180 rotated filter
+
+                filter -= filter_grad * lr # update each filter with filter_grad
+
+        #print('output grad shape')
+        #print(output_grad.shape)
+        return output_grad
 
 class MaxPool(Layer):
     """
@@ -196,15 +234,15 @@ class Flatten(Layer):
     """
     Flatten layer
     """
-    def __init__(self, input_shape: tuple):
-        self.input_shape = input_shape
+    def __init__(self):
+        self.input_shape = None
 
     def forward(self, x:np.ndarray):
+        self.input_shape = x.shape
         return x.reshape(-1)
 
     def backward(self, grad: np.ndarray, lr: float) -> np.ndarray:
-        output = grad.reshape(self.input_shape)
-        return np.reshape(output, (1, output.shape[0], output.shape[1]))
+        return grad.reshape(self.input_shape)
 
 class SoftMax(Layer):
     """
@@ -247,39 +285,36 @@ class Net():
     """
     def __init__(self, layers:list[Layer]):
         self.layers = layers
-        self.learning_rate = 0.01
+        self.learning_rate = 0.0001
 
     def forward_pass(self, x:np.ndarray):
         for layer in self.layers:
             x = layer.forward(x)
-            print(layer)
+            # print(f'After forward {str(type(layer)):<28}: {x.shape}')
             # print(x)
-            print(x.shape)
-            #print('\n')
         return x
 
     def backward_pass(self, grad:np.ndarray):
         for layer in self.layers[::-1]:
             grad = layer.backward(grad, lr=self.learning_rate)
-            print(layer)
+            # print(f'After backward {str(type(layer)):<28}: {grad.shape}')
             # print(grad)
-            print(grad.shape)
-            #print('\n')
         return grad
 
-    def train(self, x:np.ndarray, y:np.ndarray, n_epochs:int, model_path:str):
+    def train(self, x_train:np.ndarray, y_train:np.ndarray, n_epochs:int, model_path:str):
+        x_train = np.array(x_train)
+        y_train = np.array(y_train)
         losses = []
-        for epoch in n_epochs:
+        for epoch in range(n_epochs):
             running_loss = 0
-            for i, image, label in enumerate(zip(x, y)):
-                image = image / 255
 
+            for i, (image, label) in enumerate(zip(x_train, y_train)):
                 preds = self.forward_pass(image)
 
                 correct = np.zeros((len(preds)))
                 correct[label] = 1
 
-                test_net.backward_pass(correct)
+                self.backward_pass(correct)
 
                 running_loss += CrossEntropyLoss(preds, correct)
 
@@ -287,6 +322,7 @@ class Net():
                     print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 200:.3f}')
                     losses.append(running_loss)
                     running_loss = 0
+                    #break
 
         with open(model_path, 'wb') as f:
             pickle.dump(self, f)
@@ -316,32 +352,47 @@ def load_and_test(x_test:np.ndarray, y_test:np.ndarray, model_path:str, plot_wro
     with open(model_path, 'rb') as f:
         net = pickle.load(f)
 
+    x_test = np.array(x_test)
+    y_test = np.array(y_test)
+
     correct = 0
     total = 0
     for image, label in zip(x_test, y_test):
-        preds = net.forward_pass(image)
-        if np.argmax(preds) == label:
+        image = np.array(image)
+        probs = net.forward_pass(image)
+        pred = np.argmax(probs)
+        if pred == label:
             correct += 1
         total += 1
-        # add plotting wrong predictions ideally without duplicating too much logic from modeling_torch
-
+        if plot_wrong_predictions:
+            # may break because these are singular image rather than arrays of multiple
+            visualize.plot_predictions_with_letter(image, pred, label, probs=probs)
     accuracy = 100 * correct / total
     return accuracy
 
 def build_model():
     layers = [
-        Conv(1, 2, 5),
-        ReLU(),
+        # Conv(1, 2, 5),
+        # ReLU(),
+        # MaxPool(2),
+        # Conv(2, 16, 5),
+        # ReLU(),
         MaxPool(2),
-        Conv(2, 16, 5),
-        ReLU(),
-        MaxPool(2),
-        Flatten((1, 1)), #Need to find size of this
-        Linear(256, 120),
+        Flatten(),
+        Linear(196, 120), #was 256, 120
         ReLU(),
         Linear(120, 84),
         ReLU(),
         Linear(84, 25),
+        SoftMax(),
+    ]
+
+    layers = [
+        MaxPool(2),
+        Flatten(),
+        Linear(196, 120),
+        ReLU(),
+        Linear(120, 25),
         SoftMax(),
     ]
 
@@ -355,7 +406,7 @@ def make_test_arr():
     test_arr = test_arr - 0.75
     return np.reshape(test_arr, (1, test_arr_size, test_arr_size))
 
-if __name__ == '__main__':
+def test():
     # Original test layers
     # test_layers = [
     #     Flatten((28, 28)),
@@ -368,7 +419,7 @@ if __name__ == '__main__':
     # With a MaxPool
     test_layers = [
         MaxPool(2),
-        Flatten((14, 14)),
+        Flatten(),
         Linear(196, 120),
         ReLU(),
         Linear(120, 25),
@@ -379,17 +430,28 @@ if __name__ == '__main__':
 
     test_arr = make_test_arr()
 
-    images, labels = wrangle.load_qless_test_data('./assets/letter_images_testset/IMG_3296')
+    #images, labels = wrangle.load_qless_test_data('./assets/letter_images_testset/IMG_3296')
+    x_train, y_train, x_test, y_test = wrangle.load_data_splits_from_args('chars74k', 0)
+    images = x_train
+    labels = y_train
+
+    # images = np.array(images[:1000])
+    # labels = np.array(labels[:1000])
+
+    print(images[0])
+    print(labels[0])
 
     # Include for 2 channel input
     # test_arr = np.concatenate((test_arr, test_arr * 1.5), axis=0)
-
+    import math
     losses = []
-    for epoch in range(10):
+    running_losses = []
+    for epoch in range(3):
         pred_letters = []
-        for image, label in zip(images, labels):
+        for i, (image, label) in enumerate(zip(images, labels)):
 
-            image = image / 255
+            #image = np.array(image / 255)
+            image = np.array(image)
 
             #print('Forwarding')
             preds = test_net.forward_pass(image)
@@ -406,16 +468,26 @@ if __name__ == '__main__':
 
             #print(preds)
             loss = CrossEntropyLoss(preds, correct)
-            losses.append(loss)
+            running_losses.append(loss)
+            if i % 100 == 99:
+                print(loss)
+            #if math.isnan(loss):
+            #    break
 
-        print(np.mean(losses))
-        losses = []
+        avg_running_loss = np.mean(running_losses)
+        print(avg_running_loss)
+        losses.append(avg_running_loss)
+        running_losses = []
         
-    print(list(labels))
-    print(pred_letters)
+    #print(list(labels))
+    #print(pred_letters)
+
+    visualize.plot_loss_curve(losses)
 
 
-def main():
+if __name__ == '__main__':
+    #test()
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-a', '--n_augments_rotation', type=int)
     parser.add_argument('-e', '--n_epochs', type=int)
@@ -425,7 +497,7 @@ def main():
     args = parser.parse_args()
 
     if not Path(args.model_path).suffix == '.pkl':
-        args.model_path = Path(args.model_path).stem + '.pkl'
+        args.model_path = Path(args.model_path).with_name(Path(args.model_path).stem + '.pkl')
     if not Path(args.model_path).exists() and not args.train:
         raise ValueError(f'Model path {args.model_path} does not exist. Call with --train flag to train')
 
